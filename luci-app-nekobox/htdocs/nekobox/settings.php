@@ -216,7 +216,7 @@ $razordVersion = getRazordVersion();
         <div class="row justify-content-center">
             <div class="col-12 col-md-6 mb-3">
                 <select class="form-select" name="themechange" aria-label="themex">
-                    <option selected>Change Theme (<?php echo $neko_theme ?>)</option>
+                    <option selected>当前主题 (<?php echo $neko_theme ?>)</option>
                     <?php foreach ($arrFiles as $file) echo "<option value=\"".$file.'">'.$file."</option>" ?>
                 </select>
             </div>
@@ -231,125 +231,77 @@ $razordVersion = getRazordVersion();
                     </button>
                     
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filesModal">
-                        <i class="bi-upload"></i> 上传并管理背景图片
+                        <i class="bi-camera-video"></i> 设置背景
                     </button>
                 </div>
             </div>
         </div>
     </form>
 
-    <table class="table table-borderless mb-3">
-        <tbody>
-            <tr>
-                <td colspan="2">
+<table class="table table-borderless mb-3">
+    <tbody>
+        <tr>
+            <td colspan="2">
+                <div class="table-container">
                     <h2 class="text-center mb-3">自动重载防火墙</h2>
                     <form action="settings.php" method="post">
                         <div class="btn-group d-flex justify-content-center">
-                            <button type="submit" name="fw" value="enable" class="btn btn<?php if($fwstatus==1) echo "-outline" ?>-success <?php if($fwstatus==1) echo "disabled" ?> btn-fw" style="margin-right: 20px;">启用</button>
-                            <button type="submit" name="fw" value="disable" class="btn btn<?php if($fwstatus==0) echo "-outline" ?>-danger <?php if($fwstatus==0) echo "disabled" ?>">停用</button>
-                         </div>
-                     </form>
-                 </td>
-             </tr>
-         <tr>
-     <tr>
-    <td>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>客户端版本</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="text-center" style="font-family: monospace;">
-                        <span id="cliver"></span><span id="NewCliver"> </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-center">
+                            <button type="submit" name="fw" value="enable" class="btn btn-success <?php if($fwstatus==1) echo "disabled" ?>">启用</button>
+                            <button type="submit" name="fw" value="disable" class="btn btn-danger <?php if($fwstatus==0) echo "disabled" ?>">停用</button>
+                        </div>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="table-container">
+                    <h2>客户端版本</h2>
+                    <p id="cliver" class="text-center" style="font-family: monospace;"></p>
+                    <div class="text-center">
                         <button class="btn btn-pink me-1" id="checkCliverButton"><i class="bi bi-search"></i> 检测版本</button>
                         <button class="btn btn-info" id="updateButton" title="更新到最新版本" onclick="showVersionTypeModal()"><i class="bi bi-arrow-repeat"></i> 更新版本</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </td>
-    <td>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>UI 控制面板</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="text-center">
-                        <?php echo htmlspecialchars($uiVersion); ?><span id="NewUi"> </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-center">
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="table-container">
+                    <h2>UI 控制面板</h2>
+                    <p class="text-center"><?php echo htmlspecialchars($uiVersion); ?></p>
+                    <div class="text-center">
                         <button class="btn btn-pink me-1" id="checkUiButton"><i class="bi bi-search"></i> 检测版本</button>
                         <button class="btn btn-info" id="updateUiButton" title="更新面板" onclick="showPanelSelector()"><i class="bi bi-arrow-repeat"></i> 更新版本</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </td>
-</tr>
-<tr>
-    <td>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Sing-box 核心版本</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="text-center">
-                        <div id="singBoxCorever">
-                            <?php echo htmlspecialchars($singBoxVersion); ?><span id="NewSingbox"></span>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-center">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="table-container">
+                    <h2>Sing-box 核心版本</h2>
+                    <p id="singBoxCorever" class="text-center"><?php echo htmlspecialchars($singBoxVersion); ?></p>
+                    <div class="text-center">
                         <button class="btn btn-pink me-1" id="checkSingboxButton"><i class="bi bi-search"></i> 检测版本</button>
                         <button class="btn btn-info" id="singboxOptionsButton" title="Singbox 相关操作"><i class="bi bi-arrow-repeat"></i> 更新版本</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </td>
-    <td>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Mihomo 核心版本</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="text-center">
-                        <?php echo htmlspecialchars($mihomoVersion); ?><span id="NewMihomo"> </span>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-center">
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="table-container">
+                    <h2>Mihomo 核心版本</h2>
+                    <p class="text-center"><?php echo htmlspecialchars($mihomoVersion); ?></p>
+                    <div class="text-center">
                         <button class="btn btn-pink me-1" id="checkMihomoButton"><i class="bi bi-search"></i> 检测版本</button>
                         <button class="btn btn-info" id="updateCoreButton" title="更新 Mihomo 内核" onclick="showMihomoVersionSelector()"><i class="bi bi-arrow-repeat"></i> 更新版本</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </td>
-</tr>
-</tbody>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </tbody>
 </table>
+
 <div class="modal fade" id="updateVersionTypeModal" tabindex="-1" aria-labelledby="updateVersionTypeModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="updateVersionTypeModalLabel">选择更新版本类型</h5>
@@ -368,7 +320,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div class="modal fade" id="updateLanguageModal" tabindex="-1" aria-labelledby="updateLanguageModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="updateLanguageModalLabel">选择语言</h5>
@@ -394,7 +346,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div class="modal fade" id="previewLanguageModal" tabindex="-1" aria-labelledby="previewLanguageModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="previewLanguageModalLabel">选择预览版语言</h5>
@@ -418,7 +370,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div class="modal fade" id="mihomoVersionSelectionModal" tabindex="-1" aria-labelledby="mihomoVersionSelectionModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="mihomoVersionSelectionModalLabel">选择 Mihomo 内核版本</h5>
@@ -441,7 +393,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div class="modal fade" id="optionsModal" tabindex="-1" aria-labelledby="optionsModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="optionsModalLabel">选择操作</h5>
@@ -465,7 +417,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div class="modal fade" id="operationModal" tabindex="-1" aria-labelledby="operationModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="operationModalLabel">选择操作</h5>
@@ -489,7 +441,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div class="modal fade" id="versionSelectionModal" tabindex="-1" aria-labelledby="versionSelectionModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="versionSelectionModalLabel">选择 Singbox 内核版本 （编译通道一）</h5>
@@ -525,7 +477,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div class="modal fade" id="singboxVersionModal" tabindex="-1" aria-labelledby="singboxVersionModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="singboxVersionModalLabel">选择 Singbox 核心版本（官方通道二）</h5>
@@ -551,7 +503,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div id="panelSelectionModal" class="modal fade" tabindex="-1" aria-labelledby="panelSelectionModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="panelSelectionModalLabel">选择面板</h5>
@@ -580,7 +532,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div class="modal fade" id="versionModal" tabindex="-1" aria-labelledby="versionModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="versionModalLabel">版本检测结果</h5>
@@ -601,7 +553,7 @@ $razordVersion = getRazordVersion();
 </div>
 
 <div class="modal fade" id="updateModal" tabindex="-1" aria-labelledby="updateModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="updateModalLabel">更新状态</h5>
@@ -701,11 +653,11 @@ $razordVersion = getRazordVersion();
             </div>
             <div class="col-md-4 mb-3">
               <label for="ipColor" class="form-label">IP 文本色</label>
-              <input type="color" class="form-control" name="ipColor" id="ipColor" value="#ff69b4">
+              <input type="color" class="form-control" name="ipColor" id="ipColor" value="#09B63F">
             </div>
             <div class="col-md-4 mb-3">
               <label for="ipipColor" class="form-label">运营商文本色</label>
-              <input type="color" class="form-control" name="ipipColor" id="ipipColor" value="#09B63F">
+              <input type="color" class="form-control" name="ipipColor" id="ipipColor" value="#ff69b4">
             </div>
             <div class="col-md-4 mb-3">
               <label for="detailColor" class="form-label">IP详情文本色</label>
@@ -760,28 +712,14 @@ $razordVersion = getRazordVersion();
               <input type="color" class="form-control" name="heading6Color" id="heading6Color" value="#00ffff">
             </div>
           </div>
+            <div class="col-12 mb-3">
+              <label for="containerWidth" class="form-label">容器宽度</label>
+              <input type="range" class="form-range" name="containerWidth" id="containerWidth" min="800" max="2400" step="50" value="1400" style="width: 100%;">
+              <div id="widthValue" class="mt-2" style="color: #FF00FF;">当前宽度: 1400px</div>
+          </div>
           <div class="col-12 mb-3">
             <label for="themeName" class="form-label">自定义主题名称</label>
             <input type="text" class="form-control" name="themeName" id="themeName" value="transparent">
-          </div>
-
-          <div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" id="useBackgroundImage" name="useBackgroundImage">
-            <label class="form-check-label" for="useBackgroundImage">使用自定义背景图片</label>
-          </div>
-          <div class="mb-3" id="backgroundImageContainer" style="display:none; position: relative; left: -1ch;">
-            <select class="form-select" id="backgroundImage" name="backgroundImage">
-              <option value="">请选择图片</option>
-              <?php
-              $dir = $_SERVER['DOCUMENT_ROOT'] . '/nekobox/assets/Pictures/';
-              $files = array_diff(scandir($dir), array('..', '.')); 
-              foreach ($files as $file) {
-                  if (in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png'])) {
-                      echo "<option value='/nekobox/assets/Pictures/$file'>$file</option>";
-                  }
-              }
-              ?>
-            </select>
           </div>
       <div class="d-flex flex-wrap justify-content-center align-items-center mb-3 gap-2">
           <button type="submit" class="btn btn-primary">保存主题</button>
@@ -796,6 +734,72 @@ $razordVersion = getRazordVersion();
     </div>
   </div>
 </div>
+
+<style>
+    input[type="range"] {
+        -webkit-appearance: none;  
+        appearance: none;
+        width: 100%;
+        height: 10px;  
+        border-radius: 5px;
+        background: linear-gradient(to right, #ff00ff, #00ffff); 
+        outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #ff00ff;  
+        border: none;
+        cursor: pointer;
+    }
+
+    input[type="range"]:focus {
+        outline: none; 
+    }
+
+    input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #ff00ff;  
+        border: none;
+        cursor: pointer;
+    }
+
+    #widthValue {
+        color: #ff00ff;
+    }
+</style>
+
+<script>
+    const slider = document.getElementById("containerWidth");
+    const widthValue = document.getElementById("widthValue");
+
+    function updateSliderColor(value) {
+        let red = Math.min(Math.max((value - 800) / (2400 - 800) * 255, 0), 255);
+        let green = 255 - red;
+        
+        slider.style.background = `linear-gradient(to right, rgb(${red}, ${green}, 255), rgb(${255 - red}, ${green}, ${255 - red}))`;
+        slider.style.setProperty('--thumb-color', `rgb(${red}, ${green}, 255)`);
+        widthValue.textContent = `当前宽度: ${value}px`;
+        widthValue.style.color = `rgb(${red}, ${green}, 255)`;  
+    }
+
+    let savedWidth = localStorage.getItem('containerWidth');
+    if (savedWidth) {
+        slider.value = savedWidth;  
+    }
+    updateSliderColor(slider.value);  
+
+    slider.oninput = function() {
+        updateSliderColor(slider.value);
+        localStorage.setItem('containerWidth', slider.value);  
+    };
+</script>
 
 <script>
     document.getElementById('useBackgroundImage').addEventListener('change', function() {
@@ -881,72 +885,261 @@ $razordVersion = getRazordVersion();
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="filesModalLabel">上传并管理背景图片</h5>
+        <h5 class="modal-title" id="filesModalLabel">上传并管理背景图片/视频</h5>
         <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-      </div>
-      
+      </div>    
       <div class="modal-body">
         <div class="mb-4">
-          <h2 class="mb-3">上传背景图片</h2>
-          <form method="POST" action="theme.php" enctype="multipart/form-data">
-            <input type="file" class="form-control mb-3" name="imageFile" id="imageFile">
-            <button type="submit" class="btn btn-success" id="submitBtn">上传图片</button>
+          <h2 class="mb-3">上传背景图片/视频</h2>
+          <form method="POST" action="download.php" enctype="multipart/form-data">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="fas fa-cloud-upload-alt"></i> 上传图片/视频</button>
           </form>
         </div>
+          <h2 class="mb-3">上传的图片/视频文件</h2>
+          <table class="table table-bordered text-center">
+              <thead>
+                  <tr>
+                      <th>文件名</th>
+                      <th>文件大小</th>
+                      <th>预览</th>
+                      <th>操作</th>
+                  </tr>
+              </thead>
+              <tbody>
+        <?php
+        function isImage($file) {
+            $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+            $fileExtension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            return in_array($fileExtension, $imageExtensions);
+        }
 
-        <h2 class="mb-3">上传的图片文件</h2>
-        <table class="table table-bordered text-center">
-          <thead>
-            <tr>
-              <th>文件名</th>
-              <th>文件大小</th>
-              <th>预览</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php
-            $picturesDir = $_SERVER['DOCUMENT_ROOT'] . '/nekobox/assets/Pictures/';
-            if (is_dir($picturesDir)) {
-                $files = array_diff(scandir($picturesDir), array('..', '.'));
-                foreach ($files as $file) {
-                    $filePath = $picturesDir . $file;
-                    if (is_file($filePath)) {
-                        $fileSize = filesize($filePath);
-                        $fileUrl = '/nekobox/assets/Pictures/' . $file;
-                        echo "<tr>
-                                <td class='align-middle'>$file</td>
-                                <td class='align-middle'>" . formatSize($fileSize) . "</td>
-                                <td class='align-middle'><img src='$fileUrl' alt='$file' style='width: 100px; height: auto;'></td>
-                                <td class='align-middle'>
-                                  <a href='?delete=$file' class='btn btn-danger btn-sm'>删除</a>
-                                </td>
-                              </tr>";
+        function isVideo($file) {
+            $videoExtensions = ['mp4', 'avi', 'mkv', 'mov', 'wmv'];
+            $fileExtension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            return in_array($fileExtension, $videoExtensions);
+        }
+
+        function getFileNameWithoutPrefix($file) {
+            $fileBaseName = pathinfo($file, PATHINFO_FILENAME);
+            $hyphenPos = strpos($fileBaseName, '-');
+            if ($hyphenPos !== false) {
+                return substr($fileBaseName, $hyphenPos + 1) . '.' . pathinfo($file, PATHINFO_EXTENSION);
+            } else {
+                return $file;
+            }
+        }
+
+        $picturesDir = $_SERVER['DOCUMENT_ROOT'] . '/nekobox/assets/Pictures/';
+        if (is_dir($picturesDir)) {
+            $files = array_diff(scandir($picturesDir), array('..', '.'));
+            foreach ($files as $file) {
+                $filePath = $picturesDir . $file;
+                if (is_file($filePath)) {
+                    $fileSize = filesize($filePath);
+                    $fileUrl = '/nekobox/assets/Pictures/' . $file;
+                    $fileNameWithoutPrefix = getFileNameWithoutPrefix($file); 
+                    echo "<tr>
+                            <td class='align-middle' data-label='文件名'>$fileNameWithoutPrefix</td>
+                            <td class='align-middle' data-label='文件大小'>" . formatFileSize($fileSize) . "</td>
+                            <td class='align-middle' data-label='预览'>";
+                    if (isVideo($file)) {
+                        $fileType = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                        echo "<video width='100' controls>
+                                <source src='$fileUrl' type='video/$fileType'>
+                                Your browser does not support the video tag.
+                              </video>";
+                    } elseif (isImage($file)) {
+                        echo "<img src='$fileUrl' alt='$file' style='width: 100px; height: auto;'>";
+                    } else {
+                        echo "未知文件类型";
                     }
+                    
+                    echo "</td>
+                    <td class='align-middle' data-label='操作'>
+                      <div class='btn-container'>
+                        <a href='?delete=" . htmlspecialchars($file, ENT_QUOTES) . "' class='btn btn-danger' onclick='return confirm(\"确定要删除吗?\")'>删除</a>";
+                    
+                    if (isImage($file)) {
+                        echo "<button type=\"button\" onclick=\"setBackground('" . htmlspecialchars($file, ENT_QUOTES) . "', 'image')\" style=\"padding: 10px 14px; font-size: 14px; margin-left: 10px; background-color: #007bff; color: white; border-radius: 5px; border: none;\">设置图片背景</button>";
+                    } elseif (isVideo($file)) {
+                        echo "<button type=\"button\" onclick=\"setBackground('" . htmlspecialchars($file, ENT_QUOTES) . "', 'video')\" style=\"padding: 10px 14px; font-size: 14px; margin-left: 10px; background-color: #007bff; color: white; border-radius: 5px; border: none;\">设置视频背景</button>";
+                    }
+
+                    echo "</td>
+                        </tr>";
                 }
             }
-            ?>
-          </tbody>
-        </table>
-      </div>
-   <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        }
+        ?>
+    </tbody>
+</table>
+     </div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+    <button type="button" class="btn btn-danger" onclick="setBackground('', '', 'remove')">删除背景</button>
       </div>
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadModalLabel"><i class="fas fa-cloud-upload-alt"></i> 上传文件</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h2 class="mb-3">上传图片/视频</h2>
+                <form method="POST" action="download.php" enctype="multipart/form-data">
+                    <div id="dropArea" class="mb-3">
+                        <i id="uploadIcon" class="fas fa-cloud-upload-alt"></i>
+                        <p>拖拽文件到此区域，或点击图标选择文件。</p>
+                        <p>PHP上传文件会有大小限制，如遇上传失败可以手动上传文件到 /nekobox/assets/Pictures 目录</p>
+                    </div>
+                    <input type="file" class="form-control mb-3" name="imageFile[]" id="imageFile" multiple style="display: none;">                   
+                    <button type="submit" class="btn btn-success mt-3" id="submitBtnModal">
+                        上传图片/视频
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-warning" id="updatePhpConfig">更新 PHP 上传限制</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById("updatePhpConfig").addEventListener("click", function() {
+    if (confirm("确定要修改 PHP 上传限制吗？")) {
+        fetch("update_php_config.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        })
+        .then(response => response.json())
+        .then(data => alert(data.message))
+        .catch(error => alert("请求失败：" + error.message));
+    }
+});
+</script>
+
+<script>
+    document.getElementById('uploadIcon').addEventListener('click', function() {
+        document.getElementById('imageFile').click(); 
+    });
+
+    document.getElementById('imageFile').addEventListener('change', function() {
+        if (this.files.length > 0) {
+            document.getElementById('submitBtnModal').style.display = 'inline-block';
+        } else {
+            document.getElementById('submitBtnModal').style.display = 'none';
+        }
+    });
+
+    const dropArea = document.getElementById('dropArea');
+    dropArea.addEventListener('dragover', function(event) {
+        event.preventDefault(); 
+        dropArea.classList.add('dragging'); 
+    });
+
+    dropArea.addEventListener('dragleave', function() {
+        dropArea.classList.remove('dragging'); 
+    });
+
+    dropArea.addEventListener('drop', function(event) {
+        event.preventDefault();
+        dropArea.classList.remove('dragging'); 
+
+        const files = event.dataTransfer.files;
+        document.getElementById('imageFile').files = files; 
+
+        if (files.length > 0) {
+            document.getElementById('submitBtnModal').style.display = 'inline-block'; 
+        }
+    });
+</script>
+
+<script>
+    const fileInput = document.getElementById('imageFile');
+    const dragDropArea = document.getElementById('dragDropArea');
+    const submitBtn = document.getElementById('submitBtn');
+
+    dragDropArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dragDropArea.classList.add('drag-over');
+    });
+
+    dragDropArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dragDropArea.classList.remove('drag-over');
+    });
+
+    dragDropArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dragDropArea.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;  
+        }
+    });
+
+    fileInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files.length > 0) {
+            submitBtn.disabled = false;
+        } else {
+            submitBtn.disabled = true;
+        }
+    });
+
+    function updateDragDropText() {
+        if (fileInput.files.length > 0) {
+            dragDropArea.querySelector('p').textContent = `${fileInput.files.length} 个文件已选择`;
+        } else {
+            dragDropArea.querySelector('p').textContent = '拖动文件到此区域，或点击选择文件';
+        }
+    }
+</script>
+
 <?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $uploadedFilePath = '';
+    $allowedTypes = ['jpg', 'jpeg', 'png', 'mp4', 'avi', 'mkv']; 
+
+    if (isset($_FILES['imageFile']) && $_FILES['imageFile']['error'] === UPLOAD_ERR_OK) {
+        $targetDir = $_SERVER['DOCUMENT_ROOT'] . '/nekobox/assets/Pictures/';
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileExtension = strtolower(pathinfo($_FILES['imageFile']['name'], PATHINFO_EXTENSION));
+
+        if (in_array($fileExtension, $allowedTypes)) {
+            $targetFile = $targetDir . basename($_FILES['imageFile']['name']);
+            if (move_uploaded_file($_FILES['imageFile']['tmp_name'], $targetFile)) {
+                $uploadedFilePath = '/nekobox/assets/Pictures/' . basename($_FILES['imageFile']['name']);
+            }
+        } else {
+            echo "<script>alert('不支持的文件类型！');</script>";
+        }
+    }
+}
+
 if (isset($_GET['delete'])) {
     $fileToDelete = $_GET['delete'];
+    $picturesDir = $_SERVER['DOCUMENT_ROOT'] . '/nekobox/assets/Pictures/';
     $filePath = $picturesDir . $fileToDelete;
     if (file_exists($filePath)) {
-        unlink($filePath); 
-        echo '<script>window.location.href = "settings.php";</script>';
+        unlink($filePath);
+        echo "<script>alert('文件已删除！'); window.location.href = 'settings.php';</script>";
         exit;
     }
 }
 
-function formatSize($size) {
+function formatFileSize($size) {
     if ($size >= 1073741824) {
         return number_format($size / 1073741824, 2) . ' GB';
     } elseif ($size >= 1048576) {
@@ -958,8 +1151,57 @@ function formatSize($size) {
     }
 }
 ?>
-  </tbody>
-</table>
+
+<script>
+function setBackground(filename, type, action = 'set') {
+    if (action === 'set') {
+        if (type === 'image') {
+            if (confirm("确定要将此图片设置为背景吗？")) {
+                fetch('/nekobox/set_background.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'action=set&filename=' + encodeURIComponent(filename) + '&type=image'
+                })
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);  
+                    location.reload();  
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        } else if (type === 'video') {
+            if (confirm("确定要将此视频设置为背景吗？")) {
+                fetch('/nekobox/set_background.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'action=set&filename=' + encodeURIComponent(filename) + '&type=video'
+                })
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);  
+                    location.reload(); 
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+    } else if (action === 'remove') {
+        if (confirm("确定要删除背景吗？")) {
+            fetch('/nekobox/set_background.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'action=remove'
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert(data);  
+                location.reload(); 
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
+}
+</script>
+
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     const colorInputs = document.querySelectorAll('input[type="color"]');
@@ -1014,8 +1256,8 @@ function formatSize($size) {
       document.getElementById('radiusColor').value = '#14b863';
       document.getElementById('bodyColor').value = '#04f153';
       document.getElementById('tertiaryColor').value = '#46e1ec';
-      document.getElementById('ipColor').value = '#ff69b4';
-      document.getElementById('ipipColor').value = '#09B63F';
+      document.getElementById('ipColor').value = '#09b63f';
+      document.getElementById('ipipColor').value = '#ff69b4';
       document.getElementById('detailColor').value = '#FFFFFF';
       document.getElementById('outlineColor').value = '#0dcaf0';
       document.getElementById('successColor').value = '#28a745';
@@ -1029,7 +1271,7 @@ function formatSize($size) {
       document.getElementById('heading3Color').value = '#ffcc00';
       document.getElementById('heading4Color').value = '#00fbff';
       document.getElementById('heading5Color').value = '#ba13f6';
-      document.getElementById('heading6Color').value = '#00ffff';  
+      document.getElementById('heading6Color').value = '#00ffff';   
       localStorage.clear();
     });
 
@@ -1475,6 +1717,52 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<style>
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse; 
+    }
+
+    .custom-table th, .custom-table td {
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #ccc; 
+    }
+
+@media (max-width: 767px) {
+    .custom-table {
+        display: block;
+        width: 100%;
+    }
+
+    .custom-table thead {
+        display: none;
+    }
+
+    .custom-table tbody {
+        display: block;
+    }
+
+    .custom-table tr {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1rem;
+        border: none;
+    }
+
+    .custom-table td {
+        display: block;
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+    }
+
+    .custom-table td:first-child {
+        font-weight: bold;
+    }
+}
+</style>
+
 <script>
 function checkVersion(outputId, updateFiles, currentVersions) {
     const modalContent = document.getElementById('modalContent');
@@ -1536,7 +1824,7 @@ function checkVersion(outputId, updateFiles, currentVersions) {
 
     Promise.all(requests).then(() => {
         modalContent.innerHTML = `
-            <table class="table table-striped  table-bordered">
+            <table class="table custom-table">
                 <thead>
                     <tr>
                         <th class="text-center">组件名称</th>
@@ -1727,6 +2015,13 @@ document.getElementById('checkCliverButton').addEventListener('click', function 
             padding: 0;
             font-family: Arial, sans-serif;
         }
+
+        .container-fluid {
+            max-width: 2400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
         .feature-box {
             padding: 15px;
             margin-bottom: 20px;
@@ -1790,14 +2085,14 @@ document.getElementById('checkCliverButton').addEventListener('click', function 
     </style>
 </head>
 <body>
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
         <h2 class="text-center mb-4">关于 NekoBox</h2>
         <div class="feature-box text-center">
             <h5>NekoBox</h5>
             <p>NekoBox是一款精心设计的 Sing-box 代理工具，专为家庭用户打造，旨在提供简洁而强大的代理解决方案。基于 PHP 和 BASH 技术，NekoBox 将复杂的代理配置简化为直观的操作体验，让每个用户都能轻松享受高效、安全的网络环境。</p>
         </div>
 
-        <h5 class="text-center mb-4">核心特点</h5>
+        <h5 class="text-center mb-4"><i data-feather="cpu"></i>   核心特点</h5>
         <div class="row">
             <div class="col-md-4 mb-4 d-flex">
                 <div class="feature-box text-center flex-fill">
@@ -1819,7 +2114,7 @@ document.getElementById('checkCliverButton').addEventListener('click', function 
             </div>
         </div>
 
-<h5 class="text-center mb-4">工具信息</h5>
+<h5 class="text-center mb-4"><i data-feather="tool"></i>   工具信息</h5>
 <div class="d-flex justify-content-center">
     <div class="table-container">
         <table class="table table-borderless mb-5">
@@ -1831,12 +2126,12 @@ document.getElementById('checkCliverButton').addEventListener('click', function 
                 <tr class="text-center">
                     <td>
                         <div class="link-box">
-                            <a href="https://github.com/SagerNet/sing-box" target="_blank">Sing-box</a>
+                            <a href="https://github.com/SagerNet/sing-box" target="_blank"><i data-feather="codesandbox"></i>   Sing-box</a>
                         </div>
                     </td>
                     <td>
                         <div class="link-box">
-                            <a href="https://github.com/MetaCubeX/mihomo" target="_blank">Mihomo</a>
+                            <a href="https://github.com/MetaCubeX/mihomo" target="_blank"><i data-feather="box"></i>   Mihomo</a>
                         </div>
                     </td>
                 </tr>
@@ -1844,7 +2139,7 @@ document.getElementById('checkCliverButton').addEventListener('click', function 
         </table>
     </div>
 </div>
-    <h5 class="text-center mb-4">外部链接</h5>
+    <h5 class="text-center mb-4"><i data-feather="paperclip"></i>   外部链接</h5>
         <div class="table-container">
             <table class="table table-borderless mb-5">
                 <tbody>
@@ -1855,12 +2150,12 @@ document.getElementById('checkCliverButton').addEventListener('click', function 
                     <tr class="text-center">
                         <td>
                             <div class="link-box">
-                                <a href="https://github.com/Thaolga/openwrt-nekobox/issues" target="_blank">Issues</a>
+                                <a href="https://github.com/Thaolga/openwrt-nekobox/issues" target="_blank"><i data-feather="github"></i>   Issues</a>
                             </div>
                         </td>
                         <td>
                             <div class="link-box">
-                                <a href="https://github.com/Thaolga/openwrt-nekobox" target="_blank">NEKOBOX</a>
+                                <a href="https://github.com/Thaolga/openwrt-nekobox" target="_blank"><i data-feather="github"></i>   NEKOBOX</a>
                             </div>
                         </td>
                     </tr>
@@ -1871,12 +2166,12 @@ document.getElementById('checkCliverButton').addEventListener('click', function 
                     <tr class="text-center">
                         <td>
                             <div class="link-box">
-                                <a href="https://t.me/+J55MUupktxFmMDgx" target="_blank">Telegram</a>
+                                <a href="https://t.me/+J55MUupktxFmMDgx" target="_blank"><i data-feather="send"></i> Telegram</a>
                             </div>
                         </td>
                         <td>
                             <div class="link-box">
-                                <a href="https://github.com/Zephyruso/zashboard" target="_blank">ZASHBOARD</a>
+                                <a href="https://github.com/Zephyruso/zashboard" target="_blank"><i data-feather="package"></i>    ZASHBOARD</a>
                             </div>
                         </td>
                     </tr>

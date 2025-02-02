@@ -471,7 +471,131 @@ $lang = $_GET['lang'] ?? 'en';
         flex-wrap: nowrap;  
     }
 
+    svg.feather {
+        width: 20px !important;
+        height: 20px !important;
+        vertical-align: middle !important;
+        margin-right: 5px !important;
+        stroke: #FF00FF !important; 
+        fill: none !important;
+    }
+
+    #dropArea {
+        border: 2px dashed #007bff;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        background-color: #f8f9fa;
+    }
+
+    #dropArea.dragging {
+        background-color: #e9ecef;
+    }
+
+    #dropArea p {
+        color: #ff69b4; 
+    }
+
+    #uploadIcon {
+        font-size: 50px;
+        color: #007bff;
+        cursor: pointer;
+        margin-bottom: 20px;
+        transition: color 0.3s;
+    }
+
+    #uploadIcon:hover {
+        color: #0056b3; 
+    }
+
+    #submitBtnModal {
+        display: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        background-color: #28a745;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    #submitBtnModal:hover {
+        background-color: #218838;
+    }
+
+@media (max-width: 768px) {
+    .d-flex.justify-content-between.gap-2 {
+        width: 100%;
+        display: flex;
+        justify-content: space-between; 
+        gap: 5px; 
+        padding-left: 0.7em; 
+    }
+
+    .d-flex.justify-content-between.gap-2 .btn {
+        flex: 1; 
+        min-width: 0; 
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .table thead {
+        display: none;
+    }
+
+    .table tbody,
+    .table tr,
+    .table td {
+        display: block;
+        width: 100%;
+    }
+
+    .table tr {
+        margin-bottom: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        background: #f8f9fa;
+    }
+
+    .table td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .table td img,
+    .table td video {
+        display: block;
+        margin: 0 auto;
+    }
+
+    .table td .btn-container {
+        display: flex; 
+        justify-content: space-between; 
+        gap: 10px; 
+    }
+
+    .table td .btn {
+        flex: 1; 
+        text-align: center; 
+        padding: 10px;
+        font-size: 14px;
+        min-width: 0; 
+    }
+}
+
+@media (max-width: 767px) {
+    .control-toggle {
+        display: none;
+    }
+}
 </style>
+
+<link rel="stylesheet" href="./assets/bootstrap/all.min.css">
 <link href="./assets/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <script src="./assets/neko/js/jquery.min.js"></script>
 <link rel="stylesheet" href="./assets/bootstrap/leaflet.css" />
@@ -883,7 +1007,7 @@ let IP = {
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="ipDetailModalLabel">IP详细信息</h5>
-                            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
@@ -1066,7 +1190,7 @@ style.textContent = `
 }
 
 .custom-modal .modal-header {
-    background-color: #007bff;
+    background-color: #fff;;
     color: #fff;
     padding: 16px 20px;
     border-bottom: 1px solid #ddd;
@@ -1140,6 +1264,103 @@ if(typeof checkSiteStatus !== 'undefined') {
 }
 
 setInterval(IP.getIpipnetIP, 180000);
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var video = document.getElementById('background-video');
+        
+        var savedMuteState = localStorage.getItem("videoMuted");
+        if (savedMuteState !== null) {
+            video.muted = savedMuteState === "true";
+        }
+
+        var savedObjectFit = localStorage.getItem("videoObjectFit");
+        if (savedObjectFit) {
+            video.style.objectFit = savedObjectFit;
+        } else {
+            video.style.objectFit = "cover"; 
+        }
+
+        updateButtonStates();
+    });
+
+    function togglePopup() {
+        var popup = document.getElementById('popup');
+        popup.style.display = (popup.style.display === "block") ? "none" : "block";
+        updateButtonStates();
+    }
+
+    function toggleAudio() {
+        var video = document.getElementById('background-video');
+        video.muted = !video.muted;
+        localStorage.setItem("videoMuted", video.muted);
+        updateButtonStates();
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+        updateButtonStates();
+    }
+
+    function toggleObjectFit() {
+        var video = document.getElementById('background-video');
+        var objectFitBtn = document.getElementById('object-fit-btn');
+
+        switch (video.style.objectFit) {
+            case "contain":
+                video.style.objectFit = "cover";
+                objectFitBtn.textContent = "🔲 正常显示";
+                localStorage.setItem("videoObjectFit", "cover");
+                break;
+            case "cover":
+                video.style.objectFit = "fill";
+                objectFitBtn.textContent = "🖼️ 填充";
+                localStorage.setItem("videoObjectFit", "fill");
+                break;
+            case "fill":
+                video.style.objectFit = "none";
+                objectFitBtn.textContent = "🔲 不缩放";
+                localStorage.setItem("videoObjectFit", "none");
+                break;
+            case "none":
+                video.style.objectFit = "scale-down";
+                objectFitBtn.textContent = "🖼️ 缩小";
+                localStorage.setItem("videoObjectFit", "scale-down");
+                break;
+            case "scale-down":
+                video.style.objectFit = "contain";
+                objectFitBtn.textContent = "🖼️ 铺满全屏";
+                localStorage.setItem("videoObjectFit", "contain");
+                break;
+            default:
+                video.style.objectFit = "cover"; 
+                objectFitBtn.textContent = "🔲 正常显示";
+                localStorage.setItem("videoObjectFit", "cover");
+                break;
+        }
+    }
+
+    function updateButtonStates() {
+        var video = document.getElementById('background-video');
+        var audioBtn = document.getElementById('audio-btn');
+        var fullscreenBtn = document.getElementById('fullscreen-btn');
+
+        audioBtn.textContent = video.muted ? "🔇 静音" : "🔊 取消静音";
+        fullscreenBtn.textContent = document.fullscreenElement ? "📴 退出全屏" : "⛶ 进入全屏";
+    }
+
+    document.addEventListener("keydown", function(event) {
+        if (event.ctrlKey && event.shiftKey && event.key === "S") {
+            togglePopup();
+        }
+    });
+
+    document.addEventListener("fullscreenchange", updateButtonStates);
 </script>
 
 <script>
@@ -2330,4 +2551,25 @@ function speakWeather(weather) {
     }
 })();
 </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        feather.replace();
+    });
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

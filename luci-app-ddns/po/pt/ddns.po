@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-ddns 2.4.0-1\n"
 "POT-Creation-Date: 2016-01-30 11:07+0100\n"
-"PO-Revision-Date: 2024-10-05 15:15+0000\n"
-"Last-Translator: ssantos <ssantos@web.de>\n"
+"PO-Revision-Date: 2025-06-11 15:04+0000\n"
+"Last-Translator: SHUTDOWN <fidde_2003@hotmail.com>\n"
 "Language-Team: Portuguese <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationsddns/pt/>\n"
 "Language: pt\n"
@@ -11,7 +11,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.8-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:423
 msgid "\"../\" not allowed in path for Security Reason."
@@ -36,7 +36,7 @@ msgstr "Permitir IP's não-públicos"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:600
 msgid "Basic Settings"
-msgstr "Definições Básicas"
+msgstr "Definições básicas"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:890
 msgid "Bind Network"
@@ -214,7 +214,7 @@ msgstr "Ativado"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:953
 msgid "Error"
-msgstr "Falha"
+msgstr "Erro"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:1027
 msgid "Error Max Retry Counter"
@@ -225,7 +225,7 @@ msgid "Error Retry Interval"
 msgstr "Intervalo de Tentativas em Erro"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:864
-#: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:873
+#: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:874
 msgid "Event Network"
 msgstr "Rede de Eventos"
 
@@ -434,6 +434,8 @@ msgstr "Verificar nome de host"
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:794
 msgid "Method used to determine the system IP-Address to send in updates"
 msgstr ""
+"Método usado para determinar o endereço IP do sistema para enviar "
+"atualizações"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:492
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:1112
@@ -467,7 +469,7 @@ msgid "Network"
 msgstr "Rede"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:865
-#: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:874
+#: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:875
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:893
 msgid "Network on which the ddns-updater scripts will be started"
 msgstr "Rede na qual os scripts de atualização DDNS serão iniciados"
@@ -507,7 +509,7 @@ msgstr "IPs não públicos e bloqueados por padrão"
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:218
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:1109
 msgid "Not Running"
-msgstr "Não em Execução"
+msgstr "Não em execução"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:951
 msgid "Notice"
@@ -566,7 +568,7 @@ msgstr "servidor PROXY"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:746
 msgid "Password"
-msgstr "Palavra-passe"
+msgstr "Palvra-passe"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:774
 msgid "Path to CA-Certificate"
@@ -636,7 +638,7 @@ msgstr "Executar apenas uma vez"
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:229
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:1108
 msgid "Running"
-msgstr "Executando"
+msgstr "A executar"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:800
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:857
@@ -741,6 +743,8 @@ msgid ""
 "This is only a problem with multiple WAN interfaces and your DDNS provider "
 "is unreachable via one of them."
 msgstr ""
+"Este é apenas um problema com várias interfaces de WAN e o seu provedor de "
+"DDNS não é possível por um deles."
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:1072
 msgid "This is the current content of the log file in %h for this service."
@@ -819,7 +823,7 @@ msgstr "Verificar"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:952
 msgid "Warning"
-msgstr "Aviso"
+msgstr "Alerta"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:505
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:624

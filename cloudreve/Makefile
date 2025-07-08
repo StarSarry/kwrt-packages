@@ -5,12 +5,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cloudreve
-PKG_VERSION:=3.8.3
-PKG_RELEASE:=3
+PKG_VERSION:=4.2.0
+PKG_RELEASE:=31
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/cloudreve/Cloudreve.git
-PKG_SOURCE_VERSION:=3373b9dc02eb65bd0546cc47f64a0946ef4ac990
+PKG_SOURCE_VERSION:=b13490357bc3ea3a570c9a68a8fb74d3865e7a2d
 PKG_MIRROR_HASH:=skip
 
 PKG_LICENSE:=GPL-3.0-only
@@ -21,7 +21,7 @@ PKG_BUILD_DEPENDS:=golang/host node/host node-yarn/host
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16
 
-GO_PKG:=github.com/cloudreve/Cloudreve/v3
+GO_PKG:=github.com/cloudreve/Cloudreve/v4
 GO_PKG_LDFLAGS_X:= \
 	$(GO_PKG)/pkg/conf.BackendVersion=$(PKG_VERSION) \
 	$(GO_PKG)/pkg/conf.LastCommit=$(PKG_VERSION)
@@ -50,6 +50,7 @@ define Build/Compile
 		yarn run build ; \
 		cd .. ; \
 		zip -r - assets/build > assets.zip ; \
+		mv assets.zip application/statics ; \
 		popd ; \
 		$(call GoPackage/Build/Compile) ; \
 	)

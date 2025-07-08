@@ -207,6 +207,7 @@
  	;;
  esac
 
+
 --- a/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json
 +++ b/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json
 @@ -8,6 +8,7 @@

@@ -1,27 +1,27 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-07-05 08:09+0000\n"
-"Last-Translator: Danial Behzadi <dani.behzi@ubuntu.com>\n"
+"PO-Revision-Date: 2025-06-13 14:05+0000\n"
+"Last-Translator: KING APPS <kiperking1@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationsddns/fa/>\n"
 "Language: fa\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.7-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:423
 msgid "\"../\" not allowed in path for Security Reason."
-msgstr "به دلایل امنیتی در Path مجاز نیست"
+msgstr "به دلایل امنیتی، \"../\" در مسیر مجاز نیست."
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:749
 msgid "A.k.a. the TOKEN at e.g. afraid.org"
-msgstr ""
+msgstr "همچنین به عنوان توکن در مثلاً fear.org شناخته می‌شود"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:459
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:527
 msgid "Add new services..."
-msgstr ""
+msgstr "اضافه شدن سرویس‌های جدید..."
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:601
 msgid "Advanced Settings"
@@ -29,31 +29,35 @@ msgstr "تنظیمات پیشرفته"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:392
 msgid "Allow non-public IPs"
-msgstr ""
+msgstr "اجازه دادن به IP های غیر عمومی"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:600
 msgid "Basic Settings"
-msgstr ""
+msgstr "تنظیمات ساده"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:890
 msgid "Bind Network"
-msgstr ""
+msgstr "اتصال شبکه"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:332
 msgid "Binding to a specific network not supported"
-msgstr ""
+msgstr "اتصال به یک شبکه خاص پشتیبانی نمی‌شود"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:361
 msgid ""
 "BusyBox's nslookup and hostip do not support TCP instead of the default UDP "
 "when sending requests to the DNS server!"
 msgstr ""
+"nslookup و hostip در BusyBox هنگام ارسال درخواست به سرور DNS، به جای UDP "
+"پیش‌فرض، از TCP پشتیبانی نمی‌کنند!"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:372
 msgid ""
 "BusyBox's nslookup in the current compiled version does not handle given DNS "
 "Servers correctly!"
 msgstr ""
+"nslookup بیزی‌باکس در نسخه کامپایل‌شده فعلی، سرورهای DNS داده‌شده را به درستی "
+"مدیریت نمی‌کند!"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:443
 msgid "CA cert bundle file"
@@ -168,7 +172,7 @@ msgstr ""
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:17
 msgid "Disabled"
-msgstr "از کار افتاده"
+msgstr "غیرفعال"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:734
 msgid "Domain"
@@ -195,7 +199,7 @@ msgstr ""
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:606
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:1130
 msgid "Enabled"
-msgstr "به کار افتاده"
+msgstr "فعال"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:953
 msgid "Error"
@@ -210,7 +214,7 @@ msgid "Error Retry Interval"
 msgstr ""
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:864
-#: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:873
+#: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:874
 msgid "Event Network"
 msgstr ""
 
@@ -338,7 +342,7 @@ msgstr "اطّلاعات"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:264
 msgid "Information"
-msgstr "اطّلاعات"
+msgstr "اطلاعات"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:364
 msgid ""
@@ -359,7 +363,7 @@ msgstr ""
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:799
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:849
 msgid "Interface"
-msgstr "میانا"
+msgstr "رابط"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:993
 msgid "Interval to force an update at the DDNS Provider"
@@ -410,7 +414,7 @@ msgstr ""
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:492
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:1112
 msgid "Name"
-msgstr "نام"
+msgstr "اسم"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:333
 msgid ""
@@ -435,7 +439,7 @@ msgid "Network"
 msgstr "شبکه"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:865
-#: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:874
+#: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:875
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:893
 msgid "Network on which the ddns-updater scripts will be started"
 msgstr ""
@@ -532,7 +536,7 @@ msgstr ""
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:746
 msgid "Password"
-msgstr "گذرواژه"
+msgstr "گذر‌واژه"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:774
 msgid "Path to CA-Certificate"
@@ -567,7 +571,7 @@ msgstr ""
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:568
 msgid "Reload"
-msgstr ""
+msgstr "تازه‌سازی"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:551
 msgid "Reload this service"
@@ -605,7 +609,7 @@ msgstr ""
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:800
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:857
 msgid "Script"
-msgstr ""
+msgstr "اسکریپت‌"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:518
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:651
@@ -625,7 +629,7 @@ msgstr ""
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:456
 msgid "Services"
-msgstr "خدمت‌ها"
+msgstr "خدمات"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:451
 msgid "Services URL Download"
@@ -663,7 +667,7 @@ msgstr ""
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:567
 msgid "Stop"
-msgstr "توقّف"
+msgstr "توقف"
 
 #: applications/luci-app-ddns/htdocs/luci-static/resources/view/ddns/overview.js:190
 msgid "Stop DDNS"

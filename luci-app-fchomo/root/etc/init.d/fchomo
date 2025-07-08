@@ -12,6 +12,8 @@ PROG="/usr/bin/mihomo"
 
 HM_DIR="/etc/fchomo"
 TEMPS_DIR="$HM_DIR/templates"
+EXE_DIR="/usr/libexec/fchomo"
+SDL_DIR="/usr/share/fchomo"
 RUN_DIR="/var/run/fchomo"
 LOG_PATH="$RUN_DIR/fchomo.log"
 
@@ -108,11 +110,16 @@ start_service() {
 
 	mkdir -p "$RUN_DIR"
 
+	# Global ENV variables
+	config_get_bool SKIP_SAFE_PATH_CHECK "experimental" "skip_safe_path_check" "0"
+	export SKIP_SAFE_PATH_CHECK=$([ "$SKIP_SAFE_PATH_CHECK" = "1" ] && echo true || echo false)
+
 	# Client
 	if [ "$client_enabled" = "1" ]; then
 	if [ -z "$1" -o "$1" = "mihomo-c" ]; then
+
 		# Generate/Validate client config
-		ucode -S "$HM_DIR/scripts/generate_client.uc" 2>>"$LOG_PATH" | yq -Poy | yq \
+		ucode -S "$SDL_DIR/generate_client.uc" 2>>"$LOG_PATH" | yq -Poy | yq \
 			'.sniffer["force-domain"][] style="double"
 			| .sniffer["skip-domain"][] style="double"
 			| with(.dns["nameserver-policy"] | keys; .. style="double")
@@ -126,9 +133,20 @@ start_service() {
 		if [ ! -e "$RUN_DIR/mihomo-c.yaml" ]; then
 			log "Error: failed to generate client configuration."
 			return 1
-		elif ! "$PROG" -t -d "$HM_DIR" -f "$RUN_DIR/mihomo-c.yaml" >/dev/null 2>>"$LOG_PATH"; then
-			log "Error: wrong client configuration detected."
-			return 1
+		else
+			# Set ENV variables for Client
+			export SAFE_PATHS="$RUN_DIR$(
+				yq 'with(.tls; .[] |= sub("(/[^/]+$)", ""))
+					| [.external-ui, .tls.certificate, .tls.private-key] | unique
+					| .[] | sub("(^)", ":")' \
+				"$RUN_DIR/mihomo-c.yaml" | tr -d '\n'
+			)"
+
+			if ! "$PROG" -t -d "$HM_DIR" -f "$RUN_DIR/mihomo-c.yaml" >/dev/null; then
+				log "Error: wrong client configuration detected."
+				"$PROG" -t -d "$HM_DIR" -f "$RUN_DIR/mihomo-c.yaml" >>"$LOG_PATH"
+				return 1
+			fi
 		fi
 		echo > "$RUN_DIR/mihomo-c.log"
 
@@ -145,9 +163,9 @@ start_service() {
 		local global_ipv6 dns_ipv6
 		config_get_bool global_ipv6 "global" "ipv6" "1"
 		config_get_bool dns_ipv6 "dns" "ipv6" "1"
-		local dns_port tcp_dns_port
-		config_get dns_port "dns" "port" "7853"
-		config_get tcp_dns_port "inbound" "tunnel_port" "7893"
+		local dns_port tunnel_port
+		config_get dns_port "dns" "dns_port" "7853"
+		config_get tunnel_port "inbound" "tunnel_port" "7893" # Not required for v1.19.2+
 		local routing_mode routing_domain
 		config_get routing_mode "routing" "routing_mode" ""
 		config_get_bool routing_domain "routing" "routing_domain" "0"
@@ -246,6 +264,7 @@ start_service() {
 
 		procd_set_param command /bin/sh
 		procd_append_param command -c "'$PROG' -d '$HM_DIR' -f '$RUN_DIR/mihomo-c.yaml' >> '$RUN_DIR/mihomo-c.log' 2>&1"
+		procd_set_param env SAFE_PATHS="$SAFE_PATHS" SKIP_SAFE_PATH_CHECK="$SKIP_SAFE_PATH_CHECK" # The syntax of this environment variable is the same as the PATH environment variable parsing rules of this operating system (i.e., semicolon-separated under Windows and colon-separated under other systems)
 
 		# Only supports `Global`` and does not support `Proxy Group` and `Proxy Node`
 		local bind_ifname
@@ -277,14 +296,25 @@ start_service() {
 	if [ "$server_enabled" = "1" ]; then
 	if [ -z "$1" -o "$1" = "mihomo-s" ]; then
 		# Generate/Validate server config
-		ucode -S "$HM_DIR/scripts/generate_server.uc" 2>>"$LOG_PATH" | yq -Poy > "$RUN_DIR/mihomo-s.yaml"
+		ucode -S "$SDL_DIR/generate_server.uc" 2>>"$LOG_PATH" | yq -Poy > "$RUN_DIR/mihomo-s.yaml"
 
 		if [ ! -e "$RUN_DIR/mihomo-s.yaml" ]; then
 			log "Error: failed to generate server configuration."
 			return 1
-		elif ! "$PROG" -t -d "$HM_DIR" -f "$RUN_DIR/mihomo-s.yaml" >/dev/null 2>>"$LOG_PATH"; then
-			log "Error: wrong server configuration detected."
-			return 1
+		else
+			# Set ENV variables for Server
+			export SAFE_PATHS="$RUN_DIR$(
+				yq '[.listeners[] | select(.certificate // .private-key) | [.certificate, .private-key][]]
+					| .[] |= sub("(/[^/]+$)", "") | unique
+					| .[] | sub("(^)", ":")' \
+				"$RUN_DIR/mihomo-s.yaml" | tr -d '\n'
+			)"
+
+			if ! "$PROG" -t -d "$HM_DIR" -f "$RUN_DIR/mihomo-s.yaml" >/dev/null; then
+				log "Error: wrong server configuration detected."
+				"$PROG" -t -d "$HM_DIR" -f "$RUN_DIR/mihomo-s.yaml" >>"$LOG_PATH"
+				return 1
+			fi
 		fi
 		echo > "$RUN_DIR/mihomo-s.log"
 
@@ -293,6 +323,7 @@ start_service() {
 
 		procd_set_param command /bin/sh
 		procd_append_param command -c "'$PROG' -d '$HM_DIR' -f '$RUN_DIR/mihomo-s.yaml' >> '$RUN_DIR/mihomo-s.log' 2>&1"
+		procd_set_param env SAFE_PATHS="$SAFE_PATHS" SKIP_SAFE_PATH_CHECK="$SKIP_SAFE_PATH_CHECK" # The syntax of this environment variable is the same as the PATH environment variable parsing rules of this operating system (i.e., semicolon-separated under Windows and colon-separated under other systems)
 
 		#procd_set_param capabilities "/etc/capabilities/fchomo.json"
 		#procd_set_param user mihomo
@@ -340,17 +371,16 @@ start_service() {
 
 	# log-cleaner
 	procd_open_instance "log-cleaner"
-	procd_set_param command "$HM_DIR/scripts/clean_log.sh"
+	procd_set_param command "$EXE_DIR/clean_log.sh"
 	procd_set_param respawn
 	procd_close_instance
 
 	# Setup firewall
-	utpl -S "$HM_DIR/scripts/firewall_pre.ut" > "$RUN_DIR/fchomo_pre.nft"
+	utpl -S "$SDL_DIR/firewall_pre.ut" > "$RUN_DIR/fchomo_pre.nft"
 	# Setup Nftables rules
 	if [ "$client_enabled" = "1" ]; then
-		[ -z "$1" -o "$1" = "mihomo-c" ] && utpl -S "$HM_DIR/scripts/firewall_post.ut" > "$RUN_DIR/fchomo_post.nft"
+		[ -z "$1" -o "$1" = "mihomo-c" ] && utpl -S "$SDL_DIR/firewall_post.ut" > "$RUN_DIR/fchomo_post.nft"
 	fi
-	fw4 reload >"/dev/null" 2>&1
 
 	log "$(mihomo -v | awk 'NR==1{print $1,$3}') started."
 }
@@ -364,7 +394,6 @@ stop_service() {
 	[ -z "$1" -o "$1" = "mihomo-s" ] && stop_server
 	# Setup firewall
 	echo 2>"/dev/null" > "$RUN_DIR/fchomo_pre.nft"
-	fw4 reload >"/dev/null" 2>&1
 	return 0
 }
 
@@ -423,7 +452,7 @@ service_stopped() {
 	[ -n "$(/etc/init.d/$CONF info | jsonfilter -q -e '@.'"$CONF"'.instances["mihomo-c"]')" ] || client_stopped
 	# Server
 
-	procd_set_config_changed firewall;
+	procd_set_config_changed firewall
 }
 
 client_stopped() {

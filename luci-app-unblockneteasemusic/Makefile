@@ -5,12 +5,13 @@
 include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=LuCI support for UnblockNeteaseMusic (JavaScript)
-LUCI_DEPENDS:=+dnsmasq-full +node \
-	+PACKAGE_firewall:ipset \
+LUCI_DEPENDS:=+dnsmasq-full +firewall4 +node \
 	@(PACKAGE_libustream-mbedtls||PACKAGE_libustream-openssl||PACKAGE_libustream-wolfssl)
 LUCI_PKGARCH:=all
 
 PKG_NAME:=luci-app-unblockneteasemusic
+PKG_VERSION:=3.3
+PKG_RELEASE:=10
 
 PKG_MAINTAINER:=Tianling Shen <cnsztl@immortalwrt.org>
 

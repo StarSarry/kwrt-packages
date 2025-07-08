@@ -16,7 +16,6 @@
 /luci-app-webdavf
 /luci-app-baidupcs-web
 /luci-app-softether
-/mentohust
 /subweb
 /wget
 /mt
@@ -51,3 +50,11 @@
 /meig_QMI_WWAN
 /quectel_Gobinet
 /vsftpd-alt
+/luci-app-nginx-pingos
+/configs
+/aic8800
+/assets
+/v2ray-core
+/v2ray-geodata
+/k3screenctrl
+/v2raya

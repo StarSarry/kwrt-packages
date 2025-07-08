@@ -1,17 +1,41 @@
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $dfOutput = [];
+    exec('df /', $dfOutput);
+
+    $availableSpace = 0;
+    if (isset($dfOutput[1])) {
+        $dfData = preg_split('/\s+/', $dfOutput[1]);
+        $availableSpace = $dfData[3] * 1024;
+    }
+
+    $availableSpaceInMB = $availableSpace / 1024 / 1024;
+
+    $threshold = 50 * 1024 * 1024;
+
+    echo "<script>alert('OpenWRT 剩余空间: " . round($availableSpaceInMB, 2) . " MB');</script>";
+
+    if ($availableSpace < $threshold) {
+        echo "<script>alert('空间不足，上传操作已停止！');</script>";
+        exit;
+    }
+
     if (isset($_FILES['imageFile']) && is_array($_FILES['imageFile']['error'])) {
         $targetDir = $_SERVER['DOCUMENT_ROOT'] . '/nekobox/assets/Pictures/';
-        
+
         if (!file_exists($targetDir)) {
             mkdir($targetDir, 0777, true);
         }
 
-        $allowedFileTypes = ['image/jpeg', 'image/png', 'video/mp4']; 
         $maxFileSize = 1024 * 1024 * 1024; 
 
         $uploadedFiles = [];
         $fileErrors = [];
+
+        function cleanFilename($filename) {
+            $filename = preg_replace('/[^a-zA-Z0-9\-_\.]/', '', $filename); 
+            return $filename; 
+        }
 
         foreach ($_FILES['imageFile']['name'] as $key => $fileName) {
             $fileTmpName = $_FILES['imageFile']['tmp_name'][$key];
@@ -19,34 +43,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fileError = $_FILES['imageFile']['error'][$key];
             $fileType = $_FILES['imageFile']['type'][$key];
 
+            $cleanFileName = cleanFilename($fileName);
+
             if ($fileError === UPLOAD_ERR_OK) {
-                if (!in_array($fileType, $allowedFileTypes)) {
-                    $fileErrors[] = "文件 '$fileName' 类型不允许上传！";
-                    continue;
-                }
-
                 if ($fileSize > $maxFileSize) {
-                    $fileErrors[] = "文件 '$fileName' 大小超出限制！";
+                    $fileErrors[] = "File '$fileName' exceeds the size limit!";
                     continue;
                 }
 
-                $uniqueFileName = uniqid() . '-' . basename($fileName);
+                $uniqueFileName = uniqid() . '-' . basename($cleanFileName);
                 $targetFile = $targetDir . $uniqueFileName;
                 $uploadedFilePath = '/nekobox/assets/Pictures/' . $uniqueFileName;
 
                 if (move_uploaded_file($fileTmpName, $targetFile)) {
                     $uploadedFiles[] = $uploadedFilePath;
                 } else {
-                    $fileErrors[] = "文件 '$fileName' 上传失败！";
+                    $fileErrors[] = "Failed to upload file '$fileName'!";
                 }
             } else {
-                $fileErrors[] = "文件 '$fileName' 上传出错，错误代码: $fileError";
+                $fileErrors[] = "Error uploading file '$fileName', error code: $fileError";
             }
         }
 
         if (count($uploadedFiles) > 0) {
             echo "<script>
-                    alert('文件上传成功！');
+                    alert('File(s) uploaded successfully!');
                     window.location.href = 'settings.php'; 
                   </script>";
         } else {
@@ -55,14 +76,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     echo "<script>alert('$error');</script>";
                 }
             } else {
-                echo "<script>alert('没有文件上传或上传出错！');</script>";
+                echo "<script>alert('No files uploaded or an error occurred during upload!');</script>";
             }
         }
     } else {
-        echo "<script>alert('没有文件上传或上传出错！');</script>";
+        echo "<script>alert('No files uploaded or an error occurred during upload!');</script>";
     }
 } else {
-    echo "<script>alert('没有接收到数据。');</script>";
+    echo "<script>alert('No data received.');</script>";
 }
 ?>
 
@@ -113,5 +134,5 @@ if (isset($_GET['file'])) {
         exit;
     }
 
-    echo '文件不存在！';
+    echo 'File does not exist!';
 }

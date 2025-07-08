@@ -8,6 +8,18 @@ size="$(df -k | awk '/\/overlay$/ {sub(/K$/, "", $4); print $4}')"
 curltest=`which curl`
 user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
+get_tz() {
+	SET_TZ=""
+	[ -e "/etc/localtime" ] && return
+	for tzfile in /etc/TZ /var/etc/TZ
+	do
+		[ -e "$tzfile" ] || continue
+		tz="$(cat $tzfile 2>/dev/null)"
+	done
+	[ -z "$tz" ] && return
+	SET_TZ=$tz
+}
+
 start_vntcli() {
                 local cfg="$1"
 		local enabled
@@ -51,7 +63,7 @@ start_vntcli() {
        			[ -z "$tag" ] && tag="$( curl -k --connect-timeout 3 --user-agent "$user_agent" -s  https://api.github.com/repos/vnt-dev/vnt/releases/latest  2>&1 | grep 'tag_name' | cut -d\" -f4 )"
        			[ -z "$tag" ] && tag="$( curl -Lk --connect-timeout 5 --user-agent "$user_agent" -s  https://dl.cnqq.cloudns.ch/https://api.github.com/repos/vnt-dev/vnt/releases/latest  2>&1 | grep 'tag_name' | cut -d\" -f4 )"
    		fi
-		[ -z "$tag" ] && tag="1.2.15"
+		[ -z "$tag" ] && tag="v1.2.16"
 		case "${cpucore}" in 
              		"mipsle") url="mipsel-unknown-linux-musl"
 	     		;;
@@ -74,7 +86,7 @@ start_vntcli() {
 				tar -zxf /tmp/vnt-cli.tar.gz -C $path
 				rm -f /tmp/vnt-cli.tar.gz ${path}/vn-link-cli ${path}/README.md >/dev/null 2>&1
 				chmod +x "$clibin"
- 				if [ "$($clibin -h 2>&1 | wc -l)" -gt 3 ]; then
+ 				if [ "$($clibin -h 2>&1 | wc -l)" -gt 3 ] ; then
     					echo "$(date '+%Y-%m-%d %H:%M:%S') vnt-cli : ${clibin} 下载成功" >>/tmp/vnt-cli.log
 					break
  				else
@@ -162,6 +174,8 @@ EOF
       rm -rf /tmp/log4rs.yaml
           fi
 		procd_open_instance "vnt-cli"
+		get_tz
+		[ -z "$SET_TZ" ] || procd_set_param env TZ="$SET_TZ"
 		procd_set_param command "$clibin"
 		procd_append_param command -k "$token"
 		[ -z "$ipaddr" ] || procd_append_param command --ip "$ipaddr"
@@ -323,7 +337,7 @@ EOF
                 
                 [ -n "$(uci changes network)" ] && uci commit network && /etc/init.d/network reload >/dev/null 2>&1
 		[ -n "$(uci changes firewall)" ] && uci commit firewall && /etc/init.d/firewall reload >/dev/null 2>&1
-		#[ "$forward" = "0" ] || sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
+		[ "$forward" = "0" ] || sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1
                 [ ! -z "$checkip" ] && check
                 echo `date +%s` > /tmp/vnt_time
                 
@@ -342,12 +356,12 @@ time="$(($(uci -q get vnt.@vnt-cli[0].checktime) * 60))"
   fi 
 while true; do
   if [ "$(uci -q get vnt.@vnt-cli[0].enabled)" = "1" ] ; then
-    ping -c 3 223.5.5.5 -w 5 >/dev/null 2>&1
+    /bin/ping -c 3 223.5.5.5 -w 5 >/dev/null 2>&1
     if [ "$?" == "0" ]; then
         if [ ! -z "$(uci -q get vnt.@vnt-cli[0].checkip)" ] ; then
            online=""
            for ip in $(uci -q get vnt.@vnt-cli[0].checkip); do
-           ms=`echo $(ping -4 $ip -c 2 -w 4 -q) | awk -F '/' '{print $4}'`
+           ms=`echo $(/bin/ping -4 $ip -c 2 -w 4 -q) | awk -F '/' '{print $4}'`
            [ ! -z "$ms" ] && echo "$(date '+%Y-%m-%d %H:%M:%S') vnt-cli : 通断检测：${ip} 延迟：${ms}ms " >>/tmp/vnt-cli.log && online=1
            [ -z "$ms" ] && echo "$(date '+%Y-%m-%d %H:%M:%S') vnt-cli : 通断检测：${ip} 网络中断 " >>/tmp/vnt-cli.log
            done     
@@ -392,7 +406,7 @@ start_vnts() {
                    if [ "$(($(/tmp/vnts -h 2>&1 | wc -l)))" -gt 3 ] && [ "$result" -gt 500 ] ; then
                      mv -f /tmp/vnts "$vntsbin"
                      else
-		     [ -z "$size" ] && [ "$(($(/tmp/vnts -h 2>&1 | wc -l)))" -gt 3 ] && mv -f /tmp/vnts "$vntsbin"
+		     [ -z "$size" ] && [ "$(($(/tmp/vnts -h 2>&1 | wc -l)))" -gt 3 ]  && mv -f /tmp/vnts "$vntsbin"
                      echo "$(date '+%Y-%m-%d %H:%M:%S') vnts : 无法替换，上传的程序不完整或自定义路径的可用空间不足，当前空间剩余${size}kb" >>/tmp/vnts.log
                    fi
                 fi
@@ -441,7 +455,7 @@ start_vnts() {
                    	tar zxf /tmp/vnts.tar.gz -C /tmp/
                    	chmod +x /tmp/vnts
                    	rm -rf /tmp/vnts.tar.gz
-                  	if [ "$(($(/tmp/vnts -h 2>&1 | wc -l)))" -gt 3 ]; then
+                  	if [ "$(($(/tmp/vnts -h 2>&1 | wc -l)))" -gt 3 ] ; then
                     		echo "$(date '+%Y-%m-%d %H:%M:%S') vnts : /tmp/vnts 下载成功" >>/tmp/vnts.log
                     		mv -f /tmp/vnts "$vntsbin"
 				break
@@ -473,6 +487,8 @@ start_vnts() {
                 config_get_bool sfinger "$cfg" 'sfinger' '0'
 
 		procd_open_instance "vnts"
+		get_tz
+		[ -z "$SET_TZ" ] || procd_set_param env TZ="$SET_TZ"
 		procd_set_param command "$vntsbin"
 		procd_append_param command --port "$server_port"
 

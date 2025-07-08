@@ -1,51 +1,21 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-openclash
-PKG_VERSION:=0.46.064
-PKG_RELEASE:=5
+PKG_VERSION:=0.46.110
+PKG_RELEASE:=21
 PKG_MAINTAINER:=vernesong <https://github.com/vernesong/OpenClash>
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)/config
-	config PACKAGE_kmod-inet-diag
-	default y if PACKAGE_$(PKG_NAME)
-
-	config PACKAGE_luci-compat
-	default y if PACKAGE_$(PKG_NAME)
-
-	config PACKAGE_kmod-nft-tproxy
-	default y if PACKAGE_firewall4
-
-	config PACKAGE_kmod-ipt-nat
-	default y if ! PACKAGE_firewall4
-
-	config PACKAGE_iptables-mod-tproxy
-	default y if ! PACKAGE_firewall4
-
-	config PACKAGE_iptables-mod-extra
-	default y if ! PACKAGE_firewall4
-
-	config PACKAGE_dnsmasq_full_ipset
-	default y if ! PACKAGE_firewall4
-
-	config PACKAGE_dnsmasq_full_nftset
-	default y if PACKAGE_firewall4
-
-	config PACKAGE_ipset
-	default y if ! PACKAGE_firewall4
-endef
-
 define Package/$(PKG_NAME)
 	CATEGORY:=LuCI
 	SUBMENU:=3. Applications
 	TITLE:=LuCI support for clash
 	PKGARCH:=all
-	DEPENDS:=+dnsmasq-full +coreutils +coreutils-nohup +bash +curl +ca-certificates +ip-full \
-	+libcap +libcap-bin +ruby +ruby-yaml +kmod-tun +unzip \
-	+kmod-inet-diag +luci-compat
+	DEPENDS:=+luci-compat +dnsmasq-full +bash +curl +ca-bundle +ip-full +ruby \
+		+ruby-yaml +kmod-inet-diag +kmod-nft-tproxy +kmod-tun +unzip
 	MAINTAINER:=vernesong
 endef
 
@@ -58,7 +28,6 @@ define Build/Prepare
 	$(CP) $(CURDIR)/luasrc $(PKG_BUILD_DIR)
 	$(foreach po,$(wildcard ${CURDIR}/po/zh-cn/*.po), \
 		po2lmo $(po) $(PKG_BUILD_DIR)/$(patsubst %.po,%.lmo,$(notdir $(po)));)
-	sed -i "s/v0.00.00/v$(PKG_VERSION)/g" $(PKG_BUILD_DIR)/root/www/luci-static/resources/openclash/img/version.svg >/dev/null 2>&1
 	chmod 0755 $(PKG_BUILD_DIR)/root/etc/init.d/openclash
 	chmod -R 0755 $(PKG_BUILD_DIR)/root/usr/share/openclash/
 	mkdir -p $(PKG_BUILD_DIR)/root/etc/openclash/config
@@ -100,13 +69,13 @@ define Package/$(PKG_NAME)/preinst
 		cp -rf "/etc/openclash" "/tmp/openclash" >/dev/null 2>&1
 		cp -rf "/usr/share/openclash/ui/yacd" "/tmp/openclash_yacd" >/dev/null 2>&1
 		cp -rf "/usr/share/openclash/ui/dashboard" "/tmp/openclash_dashboard" >/dev/null 2>&1
+		cp -rf "/www/luci-static/resources/openclash/pac" "/tmp/pac" >/dev/null 2>&1
 	fi
 	exit 0
 endef
 
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
-	sed -i "s/v0.00.00/v$(PKG_VERSION)/g" /www/luci-static/resources/openclash/img/version.svg >/dev/null 2>&1
 	exit 0
 endef
 
@@ -119,14 +88,15 @@ define Package/$(PKG_NAME)/prerm
 	cp -rf "/etc/openclash" "/tmp/openclash" >/dev/null 2>&1
 	cp -rf "/usr/share/openclash/ui/yacd" "/tmp/openclash_yacd" >/dev/null 2>&1
 	cp -rf "/usr/share/openclash/ui/dashboard" "/tmp/openclash_dashboard" >/dev/null 2>&1
+	cp -rf "/www/luci-static/resources/openclash/pac" "/tmp/pac" >/dev/null 2>&1
 	exit 0
 endef
 
 define Package/$(PKG_NAME)/postrm
 #!/bin/sh
-	DEFAULT_DNSMASQ_CFGID="$$(uci -q show "dhcp.@dnsmasq[0]" | awk 'NR==1 {split($0, conf, /[.=]/); print conf[2]}')"
+	DEFAULT_DNSMASQ_CFGID="$$(uci -q show "dhcp.@dnsmasq[0]" | awk 'NR==1 {split($0, conf, /[.=]/); print conf[2]}' 2>/dev/null)"
 	if [ -f "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID" ]; then
-	   DNSMASQ_CONF_DIR="$$(awk -F '=' '/^conf-dir=/ {print $2}' "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID")"
+	   DNSMASQ_CONF_DIR="$$(awk -F '=' '/^conf-dir=/ {print $2}' "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID" 2>/dev/null)"
 	else
 	   DNSMASQ_CONF_DIR="/tmp/dnsmasq.d"
 	fi
@@ -149,6 +119,9 @@ define Package/$(PKG_NAME)/postrm
 	rm -rf /tmp/dler* >/dev/null 2>&1
 	rm -rf /tmp/etc/openclash >/dev/null 2>&1
 	rm -rf /tmp/openclash_edit_file_name >/dev/null 2>&1
+	rm -rf /tmp/openclash_announcement >/dev/null 2>&1
+	rm -rf /usr/share/openclash/ui/xd >/dev/null 2>&1
+	rm -rf /www/luci-static/resources/openclash/pac >/dev/null 2>&1
 	sed -i '/OpenClash Append/,/OpenClash Append End/d' "/usr/lib/lua/luci/model/network.lua" >/dev/null 2>&1
 	sed -i '/.*kB maximum content size*/c\HTTP_MAX_CONTENT      = 1024*100		-- 100 kB maximum content size' /usr/lib/lua/luci/http.lua >/dev/null 2>&1
 	sed -i '/.*kB maximum content size*/c\export let HTTP_MAX_CONTENT = 1024*100;		// 100 kB maximum content size' /usr/share/ucode/luci/http.uc >/dev/null 2>&1

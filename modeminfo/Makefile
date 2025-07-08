@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=modeminfo
-PKG_VERSION:=0.4.2
-PKG_RELEASE:=8
+PKG_VERSION:=0.4.3
+PKG_RELEASE:=23
 PKG_MAINTAINER:=Konstantine Shevlakov <shevlakov@132lan.ru>
 
 include $(INCLUDE_DIR)/package.mk
@@ -70,7 +70,6 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./root/usr/bin/* $(1)/usr/bin
 	$(CP) ./root/usr/share/modeminfo/modeminfo $(1)/usr/share/modeminfo/
-	$(CP) ./root/usr/share/modeminfo/mccmnc.dat  $(1)/usr/share/modeminfo/
 	$(CP) ./root/usr/share/modeminfo/scripts/*.gcom  $(1)/usr/share/modeminfo/scripts/
 	$(CP) ./root/usr/share/modeminfo/scripts/ch_to_band  $(1)/usr/share/modeminfo/scripts/
 	$(CP) ./root/usr/share/modeminfo/modem.list  $(1)/usr/share/modeminfo/
@@ -93,9 +92,9 @@ $(eval $(call BuildPackage,$(PKG_NAME)))
 $(eval $(call SerialPlugin,simcom,+kmod-usb-serial-option +kmod-usb-acm,SIMCOM SIM7600/SIM7906/SIM7912/A7600/A7906,SIMCOM))
 $(eval $(call SerialPlugin,huawei,+kmod-usb-serial-option,HUAWEI,HUAWEI))
 $(eval $(call SerialPlugin,quectel,+kmod-usb-serial-option,QUECTEL,QUECTEL))
-$(eval $(call SerialPlugin,fibocom,+kmod-usb-serial-option +kmod-usb-acm,FIBOCOM NL668/678/FM150/FM190/FM350,FIBOCOM))
+$(eval $(call SerialPlugin,fibocom,+kmod-usb-serial-option,FIBOCOM NL668/678/FM150/FM190,FIBOCOM))
 $(eval $(call SerialPlugin,telit,+kmod-usb-serial-option,TELIT LN940/T77W678/HP4220,QUALCOMM))
-$(eval $(call SerialPlugin,xmm,+kmod-usb-acm,FIBOCOM L850/L860 Intel XMM chips,INTEL))
+$(eval $(call SerialPlugin,xmm,+kmod-usb-serial-option +kmod-usb-acm,FIBOCOM L850/L860/FM350 Intel XMM chips,INTEL))
 $(eval $(call SerialPlugin,mikrotik,+kmod-usb-acm,MikroTik R11e-LTE/R11e-LTE6,MIKROTIK))
 $(eval $(call SerialPlugin,meig,+kmod-usb-serial-option,MEIGLink SLM750-R2/SLM820/SLM828,MEIGLINK))
 $(eval $(call SerialPlugin,sierra,+kmod-usb-serial-qualcomm,Sierra Wireless EM7455,SIERRA))

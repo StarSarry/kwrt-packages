@@ -36,6 +36,10 @@ start_service() {
 stop_service() {
     load_config
     echo "Stopping $SERVICE"
-    killall -3 clouddrive
-    [ -d "$mount_point" ] && fusermount -u "$mount_point"
+    killall -q clouddrive
+    [ -d "$mount_point" ] && fusermount3 -u "$mount_point"
+}
+
+reload_service() {
+	restart
 }

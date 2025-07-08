@@ -8,10 +8,10 @@ local sysupgrade = require "luci.model.cbi.gpsysupgrade.sysupgrade"
 
 function index()
 	appname = "gpsysupgrade"
-	entry({"admin", "services", appname}).dependent = true
-	entry({"admin", "services", appname}, template("gpsysupgrade/system_version"), _("System upgrade"), 1)
-	entry({"admin", "services", appname, "sysversion_check"}, call("sysversion_check")).leaf = true
-	entry({"admin", "services", appname, "sysversion_update"}, call("sysversion_update")).leaf = true
+	entry({"admin", "system", appname}).dependent = true
+	entry({"admin", "system", appname}, template("gpsysupgrade/system_version"), _("System upgrade"), 1)
+	entry({"admin", "system", appname, "sysversion_check"}, call("sysversion_check")).leaf = true
+	entry({"admin", "system", appname, "sysversion_update"}, call("sysversion_update")).leaf = true
 end
 
 local function http_write_json(content)
@@ -31,7 +31,7 @@ function sysversion_update()
 	if task == "flash" then
 		json = sysupgrade.to_flash(http.formvalue("file"),http.formvalue("retain"))
 	else
-		json = sysupgrade.to_download(http.formvalue("url"),http.formvalue("md5"))
+		json = sysupgrade.to_download(http.formvalue("url"))
 	end
 
 	http_write_json(json)

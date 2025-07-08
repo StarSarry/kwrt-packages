@@ -6,11 +6,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rustdesk-server
 PKG_VERSION:=1.1.14
-PKG_RELEASE:=8
+PKG_RELEASE:=17
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/rustdesk/rustdesk-server.git
-PKG_SOURCE_VERSION:=801826f36de11dca61811ad90ef06b46cc9c59c4
+PKG_SOURCE_VERSION:=$(PKG_VERSION)
 PKG_MIRROR_HASH:=skip
 
 PKG_MAINTAINER:=Tianling Shen <cnsztl@immortalwrt.org>
@@ -39,6 +39,10 @@ endef
 define Package/rustdesk-server/conffiles
 /etc/config/rustdesk-server
 /etc/rustdesk-server
+endef
+
+define Build/Compile
+	$(call Build/Compile/Cargo,,--locked)
 endef
 
 define Package/rustdesk-server/install

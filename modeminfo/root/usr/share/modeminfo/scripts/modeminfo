@@ -1,6 +1,6 @@
 # (c) 2010-2016 Cezary Jackiewicz <cezary@eko.one.pl>
-# (c) 2020-2024 modified by Konstantine Shevlyakov  <shevlakov@132lan.ru>
-# (c) 2021 modified by Vladislav Kadulin  <spanky@yandex.ru>
+# (c) 2020-2025 modified by Konstantine Shevlyakov  <shevlakov@132lan.ru>
+# (c) 2021-2025 modified by Vladislav Kadulin  <spanky@yandex.ru>
 
 
 RES="/usr/share/modeminfo"
@@ -70,15 +70,16 @@ function get_csq(){
 # Get MCC or MNC 
 function get_cops() {
 	# COPS
-	COPS_NUM=$(echo "$O" | awk -F[\"] '/^\+COPS:\s?.,2/ {print $2}')
-	if [ "x$COPS_NUM" != "x" ]; then
-		COPS_MCC=${COPS_NUM:0:3}
-		COPS_MNC=${COPS_NUM:3:3}
-		COPS=$(awk -F[\;] '/'$COPS_NUM'/ {print $2}' $RES/mccmnc.dat)
-		if [ "x$COPS" = "x" ]; then
-			COPS="$COPS_MCC $COPS_MNC"
-		fi
-	fi
+	#COPS_NUM=$(echo "$O" | awk -F[\"] '/^\+COPS:\s?.,2/ {print $2}')
+	#if [ "x$COPS_NUM" != "x" ]; then
+	#	COPS_MCC=${COPS_NUM:0:3}
+	#	COPS_MNC=${COPS_NUM:3:3}
+	#	COPS=$(awk -F[\;] '/'$COPS_NUM'/ {print $2}' $RES/mccmnc.dat)
+	#	if [ "x$COPS" = "x" ]; then
+	#		COPS="$COPS_MCC $COPS_MNC"
+	#	fi
+	#fi
+	COPS=$(echo "$O" | awk -F[\"] '/^\+COPS:\s?.,0/ {print $2}' | awk '{for(i=NF;i>=1;i--){w=tolower($i);if(!s[w]++)r=r?$i" "r:$i} print r}')	
 }
 
 # Get Registration data

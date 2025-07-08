@@ -1,4 +1,12 @@
 #!/bin/sh
+[ ! -f "/usr/share/ucitrack/luci-app-filebrowser.json" ] && {
+    cat > /usr/share/ucitrack/luci-app-filebrowser.json << EEOF
+{
+    "config": "filebrowser",
+    "init": "filebrowser"
+}
+EEOF
+}
 
 uci -q batch <<-EOF >/dev/null
 	delete ucitrack.@filebrowser[-1]

@@ -21,6 +21,19 @@ return baseclass.extend({
 		'ipv6_only': _('IPv6 only')
 	},
 
+	shadowsocks_encrypt_length: {
+		/* AEAD */
+		'aes-128-gcm': 0,
+		'aes-192-gcm': 0,
+		'aes-256-gcm': 0,
+		'chacha20-ietf-poly1305': 0,
+		'xchacha20-ietf-poly1305': 0,
+		/* AEAD 2022 */
+		'2022-blake3-aes-128-gcm': 16,
+		'2022-blake3-aes-256-gcm': 32,
+		'2022-blake3-chacha20-poly1305': 32
+	},
+
 	shadowsocks_encrypt_methods: [
 		/* Stream */
 		'none',
@@ -271,6 +284,25 @@ return baseclass.extend({
 		if (section_id && value)
 			if (!value.match(/^(\/etc\/homeproxy\/certs\/|\/etc\/acme\/|\/etc\/ssl\/).+$/))
 				return _('Expecting: %s').format(_('/etc/homeproxy/certs/..., /etc/acme/..., /etc/ssl/...'));
+
+		return true;
+	},
+
+	validatePortRange(section_id, value) {
+		if (section_id && value) {
+			value = value.match(/^(\d+)?\:(\d+)?$/);
+			if (value && (value[1] || value[2])) {
+				if (!value[1])
+					value[1] = 0;
+				else if (!value[2])
+					value[2] = 65535;
+
+				if (value[1] < value[2] && value[2] <= 65535)
+					return true;
+			}
+
+			return _('Expecting: %s').format( _('valid port range (port1:port2)'));
+		}
 
 		return true;
 	},

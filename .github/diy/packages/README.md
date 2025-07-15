@@ -5,6 +5,7 @@
 ### 使用软件源请删除 opkg配置(/etc/opkg.conf) 中的 option check_signature
 
 
+
 | CPU架构           | 下载地址                                             | 适用设备    | 软件源    | 更新频率    |
 |----------------|-----------------------------------------------------|--------------------------------------|-----------|-----------|
 | X86_64         | [📥](https://dl.openwrt.ai/latest/packages/x86_64/kiddin9/)         |          64位PC软路由    | src/gz openwrt_kiddin9 https://dl.openwrt.ai/latest/packages/x86_64/kiddin9 | 日更  |

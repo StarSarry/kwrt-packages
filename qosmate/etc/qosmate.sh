@@ -55,10 +55,15 @@ load_config() {
     config_get NFT_PRIORITY advanced NFT_PRIORITY 0
     config_get TCP_DOWNPRIO_INITIAL_ENABLED advanced TCP_DOWNPRIO_INITIAL_ENABLED 1
     config_get TCP_DOWNPRIO_SUSTAINED_ENABLED advanced TCP_DOWNPRIO_SUSTAINED_ENABLED 1
+    
+    # Link Layer Settings (moved from CAKE, now used by all QDiscs)
+    config_get COMMON_LINK_PRESETS advanced COMMON_LINK_PRESETS ethernet
+    config_get OVERHEAD advanced OVERHEAD  # No default - helper functions handle defaults per preset
+    config_get MPU advanced MPU
+    config_get LINK_COMPENSATION advanced LINK_COMPENSATION
+    config_get ETHER_VLAN_KEYWORD advanced ETHER_VLAN_KEYWORD
 
     # HFSC specific settings
-    config_get LINKTYPE hfsc LINKTYPE ethernet
-    config_get OH hfsc OH $DEFAULT_OH
     config_get gameqdisc hfsc gameqdisc pfifo
     config_get GAMEUP hfsc GAMEUP $((UPRATE*15/100+400))
     config_get GAMEDOWN hfsc GAMEDOWN $((DOWNRATE*15/100+400))
@@ -74,11 +79,6 @@ load_config() {
     config_get pktlossp hfsc pktlossp none
 
     # CAKE specific settings
-    config_get COMMON_LINK_PRESETS cake COMMON_LINK_PRESETS ethernet
-    config_get OVERHEAD cake OVERHEAD
-    config_get MPU cake MPU
-    config_get LINK_COMPENSATION cake LINK_COMPENSATION
-    config_get ETHER_VLAN_KEYWORD cake ETHER_VLAN_KEYWORD
     config_get PRIORITY_QUEUE_INGRESS cake PRIORITY_QUEUE_INGRESS diffserv4
     config_get PRIORITY_QUEUE_EGRESS cake PRIORITY_QUEUE_EGRESS diffserv4
     config_get HOST_ISOLATION cake HOST_ISOLATION 1
@@ -96,6 +96,58 @@ load_config() {
 }
 
 load_config
+
+# Get tc stab parameters for HFSC/HTB/Hybrid
+get_tc_overhead_params() {
+    local preset="${COMMON_LINK_PRESETS:-ethernet}"
+    local overhead="$OVERHEAD"
+    
+    # Detect ATM-based presets
+    case "$preset" in
+        *atm*|*adsl*|*pppoa*|*pppoe*|*bridged*|*ipoa*|conservative)
+            printf "stab mtu 2047 tsize 512 mpu 68 overhead ${overhead:-44} linklayer atm"
+            ;;
+        docsis)
+            printf "stab overhead ${overhead:-25} linklayer ethernet"
+            ;;
+        cake-ethernet)
+            printf "stab overhead ${overhead:-38} linklayer ethernet"
+            ;;
+        raw)
+            printf "stab overhead ${overhead:-0} linklayer ethernet"
+            ;;
+        *)
+            printf "stab overhead ${overhead:-40} linklayer ethernet"
+            ;;
+    esac
+}
+
+# Get CAKE parameters from common link settings
+# $1 = "hybrid" to force manual overhead for consistency with HFSC
+get_cake_link_params() {
+    local preset="${COMMON_LINK_PRESETS:-ethernet}"
+    local oh="${OVERHEAD}"
+    local base=""
+    
+    # Determine base keyword and default overhead
+    case "$preset" in
+        *atm*|*adsl*|*pppoa*|*pppoe*|*bridged*|*ipoa*|conservative)
+            [ "$1" = "hybrid" ] && base="atm" || base="${preset}"
+            : ${oh:=44}
+            ;;
+        docsis)       base="docsis";   : ${oh:=25} ;;
+        cake-ethernet) base="ethernet"; [ "$1" != "hybrid" ] && oh="" || : ${oh:=38} ;;
+        raw)          base="raw";      : ${oh:=0} ;;
+        ethernet|*)   base="ethernet"; : ${oh:=40} ;;
+    esac
+    
+    # Build parameters
+    printf "%s%s%s%s" \
+        "$base" \
+        "${oh:+ overhead $oh}" \
+        "${MPU:+ mpu $MPU}" \
+        "${ETHER_VLAN_KEYWORD:+ $ETHER_VLAN_KEYWORD}"
+}
 
 validate_and_adjust_rates() {
     if [ "$ROOT_QDISC" = "hfsc" ] || [ "$ROOT_QDISC" = "hybrid" ]; then
@@ -271,11 +323,8 @@ SETS=$(create_nft_sets)
 # Create rules
 create_nft_rule() {
     local config="$1"
-    local src_ip src_port dest_ip dest_port proto class counter name enabled trace
-    config_get src_ip "$config" src_ip
-    config_get src_port "$config" src_port
-    config_get dest_ip "$config" dest_ip
-    config_get dest_port "$config" dest_port
+    local proto class counter name enabled trace
+
     config_get proto "$config" proto
     config_get class "$config" class
     config_get_bool counter "$config" counter 0
@@ -300,16 +349,6 @@ create_nft_rule() {
         local setname="$1"
         [ -f /tmp/qosmate_set_families ] && awk -v set="$setname" '$1 == set {print $2}' /tmp/qosmate_set_families
     }
-    
-    # Early check for mixed IPv4/IPv6
-    local has_ipv4=0
-    local has_ipv6=0
-    
-    # Variables to store filtered IPs for mixed rules
-    local src_ip_v4=""
-    local src_ip_v6=""
-    local dest_ip_v4=""
-    local dest_ip_v6=""
     
     # Function to separate IPs by family
     separate_ips_by_family() {
@@ -359,20 +398,24 @@ create_nft_rule() {
         eval "${1}=\"\${ipv4_result}\" ${2}=\"\${ipv6_result}\""
     }
     
-    # Check and separate source IPs
-    if [ -n "$src_ip" ]; then
-        separate_ips_by_family src_ip_v4 src_ip_v6 "$src_ip"
-        [ -n "$src_ip_v4" ] && has_ipv4=1
-        [ -n "$src_ip_v6" ] && has_ipv6=1
-    fi
-    
-    # Check and separate destination IPs
-    if [ -n "$dest_ip" ]; then
-        separate_ips_by_family dest_ip_v4 dest_ip_v6 "$dest_ip"
-        [ -n "$dest_ip_v4" ] && has_ipv4=1
-        [ -n "$dest_ip_v6" ] && has_ipv6=1
-    fi
-    
+    # Check and separate source and destination IPs
+    local src_ip dest_ip \
+        src_ip_v4='' src_ip_v6='' dest_ip_v4='' dest_ip_v6='' \
+        has_ipv4=0 has_ipv6=0 \
+        ip_val ip_type
+
+    for ip_type in src_ip dest_ip; do
+        config_get "${ip_type}" "$config" "${ip_type}"
+        eval "ip_val=\"\${$ip_type}\""
+        if [ -n "$ip_val" ]; then
+            separate_ips_by_family "${ip_type}_v4" "${ip_type}_v6" "$ip_val"
+            eval "
+                [ -n \"\${${ip_type}_v4}\" ] && has_ipv4=1
+                [ -n \"\${${ip_type}_v6}\" ] && has_ipv6=1
+            "
+        fi
+    done
+
     # Log if mixed IPv4/IPv6 addresses are found
     if [ "$has_ipv4" -eq 1 ] && [ "$has_ipv6" -eq 1 ]; then 
         logger -t qosmate "Info: Mixed IPv4/IPv6 addresses in rule '$name' ($config). Splitting into separate rules."
@@ -385,11 +428,24 @@ create_nft_rule() {
         has_ipv6=1
     fi
 
-    # Initialize rule string
-    local rule_cmd=""
-
     # Function to handle multiple values with IP family awareness
     gen_rule() {
+        add_res_rule() {
+            if [ -z "$res_set_neg" ] && [ -z "$res_set_pos" ]; then
+                logger -t qosmate "Error: no valid $1 found in '$values'. Rule skipped."
+                return 1
+            fi
+
+            if [ -n "$res_set_neg" ]; then
+                result="${result}${result:+ }${prefix} != { ${res_set_neg} }"
+            fi
+
+            if [ -n "$res_set_pos" ]; then
+                result="${result}${result:+ }${prefix} { ${res_set_pos} }"
+            fi
+            :
+        }
+
         local value setname family suffix mask comp_op negation \
             result='' res_set_neg='' res_set_pos='' has_ipv4='' has_ipv6='' set_ref_seen='' ipv6_mask_seen='' reg_val_seen='' \
             values="$1" \
@@ -444,48 +500,32 @@ create_nft_rule() {
                 continue
             fi
 
-            # Collect values based on prefix type
+            # Validate prefix type
             case "$prefix" in 
-                *addr*)
-                    # IP address handling
-                    reg_val_seen=1
-                    if is_ipv6 "$value"; then
-                        has_ipv6=1
-                    else
-                        has_ipv4=1
-                    fi
-                    
-                    if [ -n "$negation" ]; then
-                        res_set_neg="${res_set_neg}${res_set_neg:+,}${value}"
-                    else
-                        res_set_pos="${res_set_pos}${res_set_pos:+,}${value}"
-                    fi
-                    ;;
-                    
-                "th sport"|"th dport")
-                    # Port handling - no IPv4/IPv6 distinction needed
-                    reg_val_seen=1
-                    if [ -n "$negation" ]; then
-                        res_set_neg="${res_set_neg}${res_set_neg:+,}${value}"
-                    else
-                        res_set_pos="${res_set_pos}${res_set_pos:+,}${value}"
-                    fi
-                    ;;
-                    
-                "meta l4proto")
-                    # Protocol handling
-                    reg_val_seen=1
-                    if [ -n "$negation" ]; then
-                        res_set_neg="${res_set_neg}${res_set_neg:+,}${value}"
-                    else
-                        res_set_pos="${res_set_pos}${res_set_pos:+,}${value}"
-                    fi
+                "ip saddr"|"ip daddr"|"ip6 saddr"|"ip6 daddr"|"th sport"|"th dport"|"meta l4proto")
                     ;;
                 *)
-                    logger -t qosmate "Error: unexpected data in '$prefix'."
+                    logger -t qosmate "Error: unexpected prefix '$prefix'."
                     return 1
                     ;;
             esac
+
+            case "$prefix" in *addr*)
+                if is_ipv6 "$value"; then
+                    has_ipv6=1
+                else
+                    has_ipv4=1
+                fi
+            esac
+
+            # Collect values
+            if [ -n "$negation" ]; then
+                res_set_neg="${res_set_neg}${res_set_neg:+,}${value}"
+            else
+                res_set_pos="${res_set_pos}${res_set_pos:+,}${value}"
+            fi
+
+            reg_val_seen=1
         done
 
         if [ -n "$set_ref_seen" ] || [ -n "$ipv6_mask_seen" ]; then
@@ -508,55 +548,25 @@ create_nft_rule() {
         case "$prefix" in
             *addr*)
                 # IP address rules
-                if [ -z "$res_set_neg" ] && [ -z "$res_set_pos" ]; then
-                    logger -t qosmate "Error: no valid values found in '$values'. Rule skipped."
-                    return 1
-                fi
-
-                if [ -n "$res_set_neg" ]; then
-                    result="${result}${result:+ }${prefix} != { ${res_set_neg} }"
-                fi
-
-                if [ -n "$res_set_pos" ]; then
-                    result="${result}${result:+ }${prefix} { ${res_set_pos} }"
-                fi 
+                add_res_rule addresses || return 1
                 ;;
                 
             "th sport"|"th dport")
                 # Port rules
-                if [ -z "$res_set_neg" ] && [ -z "$res_set_pos" ]; then
-                    logger -t qosmate "Error: no valid ports found in '$values'. Rule skipped."
-                    return 1
-                fi
-                
-                if [ -n "$res_set_neg" ]; then
-                    result="${result}${result:+ }${prefix} != { ${res_set_neg} }"
-                fi
-                
-                if [ -n "$res_set_pos" ]; then
-                    result="${result}${result:+ }${prefix} { ${res_set_pos} }"
-                fi
+                add_res_rule ports || return 1
                 ;;
                 
             "meta l4proto")
                 # Protocol rules
-                if [ -z "$res_set_neg" ] && [ -z "$res_set_pos" ]; then
-                    logger -t qosmate "Error: no valid protocols found in '$values'. Rule skipped."
-                    return 1
-                fi
-                
-                if [ -n "$res_set_neg" ]; then
-                    result="${result}${result:+ }${prefix} != { ${res_set_neg} }"
-                fi
-                
-                if [ -n "$res_set_pos" ]; then
-                    result="${result}${result:+ }${prefix} { ${res_set_pos} }"
-                fi
+                add_res_rule protocols || return 1
                 ;;
         esac
 
         printf '%s\n' "$result"
     }
+
+    # Initialize rule string
+    local rule_cmd=""
 
     # Handle multiple protocols
     if [ -n "$proto" ]; then
@@ -568,30 +578,23 @@ create_nft_rule() {
         rule_cmd="$rule_cmd $proto_result"
     fi
 
-    # Note: Source IP handling is now done per-family in the rule generation below
+    # Note: Source and Destination IP handling is now done per-family in the rule generation below
     
-    # Use connection tracking for source port
-    if [ -n "$src_port" ]; then
-        local src_port_result
-        if ! src_port_result="$(gen_rule "$src_port" "th sport")"; then
-            # Skip rule
-            return 0
-        fi
-        rule_cmd="$rule_cmd $src_port_result"
-    fi
+    # Use connection tracking for source and destination ports
+    local src_port dest_port port port_type port_res port_seen=''
 
-    # Note: Destination IP handling is now done per-family in the rule generation below
-    
-    # Use connection tracking for destination port
-    if [ -n "$dest_port" ]; then
-        local dest_port_result
-        if ! dest_port_result="$(gen_rule "$dest_port" "th dport")"; then
-            # Skip rule
-            return 0
+    for port_type in src_port dest_port; do
+        config_get port "$config" "$port_type"
+        if [ -n "$port" ]; then
+            if ! port_res="$(gen_rule "$port" "th ${port_type%%"${port_type#?}"}port")"; then
+                # Skip rule
+                return 0
+            fi
+            rule_cmd="$rule_cmd $port_res"
+            port_seen=1
         fi
-        rule_cmd="$rule_cmd $dest_port_result"
-    fi
-    
+    done
+
     # Build final rule(s) based on has_ipv4 and has_ipv6 flags
     local final_rule_v4=""
     local final_rule_v6=""
@@ -621,7 +624,7 @@ create_nft_rule() {
         fi
         
         # Ensure we only add parts if there's something to match on (IP/Port/Proto)
-        if [ -n "$proto" ] || [ -n "$src_ip_v4" ] || [ -n "$dest_ip_v4" ] || [ -n "$src_port" ] || [ -n "$dest_port" ]; then
+        if [ -n "$proto" ] || [ -n "$src_ip_v4" ] || [ -n "$dest_ip_v4" ] || [ -n "$port_seen" ]; then
             rule_cmd_v4="$rule_cmd_v4 ip dscp set $class"
         fi
         [ "$counter" -eq 1 ] && rule_cmd_v4="$rule_cmd_v4 counter"
@@ -658,7 +661,7 @@ create_nft_rule() {
         fi
         
         # Ensure we only add parts if there's something to match on (IP/Port/Proto)
-        if [ -n "$proto" ] || [ -n "$src_ip_v6" ] || [ -n "$dest_ip_v6" ] || [ -n "$src_port" ] || [ -n "$dest_port" ]; then
+        if [ -n "$proto" ] || [ -n "$src_ip_v6" ] || [ -n "$dest_ip_v6" ] || [ -n "$port_seen" ]; then
             rule_cmd_v6="$rule_cmd_v6 ip6 dscp set $class"
         fi
         [ "$counter" -eq 1 ] && rule_cmd_v6="$rule_cmd_v6 counter"
@@ -813,6 +816,27 @@ else
 fi
 
 ##############################
+# Inline Rules Check
+##############################
+INLINE_FILE="/etc/qosmate.d/inline_dscptag.nft"
+INLINE_INCLUDE=""
+
+if [ -s "$INLINE_FILE" ]; then
+    TMP_CHECK_FILE="/tmp/qosmate_inline_sh_check.nft"
+
+    printf "%s\n" "table inet __qosmate_sh_ctx {" > "$TMP_CHECK_FILE"
+    printf "\t%s\n" "chain __dscptag_sh_ctx {" >> "$TMP_CHECK_FILE"
+    cat "$INLINE_FILE" >> "$TMP_CHECK_FILE"
+    printf "\n\t%s\n" "}" >> "$TMP_CHECK_FILE"
+    printf "%s\n" "}" >> "$TMP_CHECK_FILE"
+
+    if nft --check --file "$TMP_CHECK_FILE" 2>/dev/null; then
+        INLINE_INCLUDE="include \"$INLINE_FILE\""
+    fi
+    rm -f "$TMP_CHECK_FILE"
+fi
+
+##############################
 #       dscptag.nft
 ##############################
 
@@ -920,7 +944,7 @@ ${SETS}
         type filter hook $NFT_HOOK priority $NFT_PRIORITY; policy accept;
 
         iif "lo" accept    
-        $(if { [ "$ROOT_QDISC" = "hfsc" ] || [ "$ROOT_QDISC" = "hybrid" ]; } && [ "$WASHDSCPDOWN" -eq 1 ]; then
+        $(if { [ "$ROOT_QDISC" = "hfsc" ] || [ "$ROOT_QDISC" = "hybrid" ] || [ "$ROOT_QDISC" = "htb" ]; } && [ "$WASHDSCPDOWN" -eq 1 ]; then
             echo "# wash all the DSCP on ingress ... "
             echo "        counter jump mark_cs0"
           fi
@@ -958,6 +982,10 @@ ${SETS}
 
         $tcp_upgrade_rules
         
+        # --- user inline rules begin ---
+        $INLINE_INCLUDE
+        # --- user inline rules end   ---
+        
 ${DYNAMIC_RULES}
 
         ## classify for the HFSC queues:
@@ -968,7 +996,7 @@ ${DYNAMIC_RULES}
         ct mark set ip dscp or 128 counter
         ct mark set ip6 dscp or 128 counter
 
-        $(if { [ "$ROOT_QDISC" = "hfsc" ] || [ "$ROOT_QDISC" = "hybrid" ]; } && [ "$WASHDSCPUP" -eq 1 ]; then
+        $(if { [ "$ROOT_QDISC" = "hfsc" ] || [ "$ROOT_QDISC" = "hybrid" ] || [ "$ROOT_QDISC" = "htb" ]; } && [ "$WASHDSCPUP" -eq 1 ]; then
             echo "# wash all DSCP on egress ... "
             echo "meta oifname \$wan jump mark_cs0"
           fi
@@ -1185,19 +1213,10 @@ setup_hfsc() {
 
     tc qdisc del dev "$DEV" root > /dev/null 2>&1
 
-    # Overhead logic
-    local TC_OH_PARAMS=""
-    case $LINKTYPE in
-        "atm")
-            TC_OH_PARAMS="stab mtu 2047 tsize 512 mpu 68 overhead ${OH} linklayer atm"
-            ;;
-        "DOCSIS")
-            TC_OH_PARAMS="stab overhead 25 linklayer ethernet"
-            ;;
-        *)
-            TC_OH_PARAMS="stab overhead 40 linklayer ethernet"
-            ;;
-    esac
+    # Get overhead parameters from CAKE configuration
+    local TC_OH_PARAMS
+    TC_OH_PARAMS=$(get_tc_overhead_params)
+    
     # Apply root qdisc
     tc qdisc replace dev "$DEV" handle 1: root ${TC_OH_PARAMS} hfsc default 13
 
@@ -1261,12 +1280,14 @@ setup_cake() {
     tc qdisc del dev "$WAN" root > /dev/null 2>&1
     tc qdisc del dev "$LAN" root > /dev/null 2>&1
     
+    # Get CAKE link parameters
+    local cake_link_params=$(get_cake_link_params)
+    
     # Egress (Upload) CAKE setup
     EGRESS_CAKE_OPTS="bandwidth ${UPRATE}kbit"
     [ -n "$PRIORITY_QUEUE_EGRESS" ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS $PRIORITY_QUEUE_EGRESS"
     [ "$HOST_ISOLATION" -eq 1 ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS dual-srchost"
     [ "$NAT_EGRESS" -eq 1 ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS nat" || EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS nonat"
-    
     [ "$WASHDSCPUP" -eq 1 ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS wash" || EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS nowash"
     
     if [ "$ACK_FILTER_EGRESS" = "auto" ]; then
@@ -1282,10 +1303,9 @@ setup_cake() {
     fi
     
     [ -n "$RTT" ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS rtt ${RTT}ms"
-    [ -n "$COMMON_LINK_PRESETS" ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS $COMMON_LINK_PRESETS"
-    [ -n "$LINK_COMPENSATION" ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS $LINK_COMPENSATION" || EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS noatm"
-    [ -n "$OVERHEAD" ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS overhead $OVERHEAD"
-    [ -n "$MPU" ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS mpu $MPU"
+    [ -n "$cake_link_params" ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS $cake_link_params"
+    # Only add LINK_COMPENSATION if explicitly set (don't add noatm as ADSL presets already set atm)
+    [ -n "$LINK_COMPENSATION" ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS $LINK_COMPENSATION"
     [ -n "$EXTRA_PARAMETERS_EGRESS" ] && EGRESS_CAKE_OPTS="$EGRESS_CAKE_OPTS $EXTRA_PARAMETERS_EGRESS"
     
     tc qdisc add dev $WAN root cake $EGRESS_CAKE_OPTS
@@ -1296,14 +1316,12 @@ setup_cake() {
     [ -n "$PRIORITY_QUEUE_INGRESS" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS $PRIORITY_QUEUE_INGRESS"
     [ "$HOST_ISOLATION" -eq 1 ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS dual-dsthost"
     [ "$NAT_INGRESS" -eq 1 ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS nat" || INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS nonat"
-    
     [ "$WASHDSCPDOWN" -eq 1 ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS wash" || INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS nowash"
     
     [ -n "$RTT" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS rtt ${RTT}ms"
-    [ -n "$COMMON_LINK_PRESETS" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS $COMMON_LINK_PRESETS"
-    [ -n "$LINK_COMPENSATION" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS $LINK_COMPENSATION" || INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS noatm"
-    [ -n "$OVERHEAD" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS overhead $OVERHEAD"
-    [ -n "$MPU" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS mpu $MPU"
+    [ -n "$cake_link_params" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS $cake_link_params"
+    # Only add LINK_COMPENSATION if explicitly set (don't add noatm as ADSL presets already set atm)
+    [ -n "$LINK_COMPENSATION" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS $LINK_COMPENSATION"
     [ -n "$EXTRA_PARAMETERS_INGRESS" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS $EXTRA_PARAMETERS_INGRESS"
     
     tc qdisc add dev $LAN root cake $INGRESS_CAKE_OPTS
@@ -1320,12 +1338,9 @@ setup_hybrid() {
     local gameburst=$((GAMERATE*10)); [ $gameburst -gt $((RATE*97/100)) ] && gameburst=$((RATE*97/100));
 
     # Setup root HFSC qdisc (default to 1:13 - CAKE class)
-    local TC_OH_PARAMS=""
-    case $LINKTYPE in
-        "atm") TC_OH_PARAMS="stab mtu 2047 tsize 512 mpu 68 overhead ${OH} linklayer atm";;
-        "DOCSIS") TC_OH_PARAMS="stab overhead 25 linklayer ethernet";;
-        *) TC_OH_PARAMS="stab overhead 40 linklayer ethernet";;
-    esac
+    local TC_OH_PARAMS
+    TC_OH_PARAMS=$(get_tc_overhead_params)
+    
     # Ensure previous root is deleted before replacing
     tc qdisc del dev "$DEV" root > /dev/null 2>&1
     tc qdisc replace dev "$DEV" handle 1: root ${TC_OH_PARAMS} hfsc default 13
@@ -1348,18 +1363,19 @@ setup_hybrid() {
     # Class 1:13 - CAKE class (most traffic - default)
     local cake_rate=$((RATE - GAMERATE)); [ $cake_rate -le 0 ] && cake_rate=1
     tc class add dev "$DEV" parent 1:1 classid 1:13 hfsc ls m1 "${cake_rate}kbit" d "${DUR}ms" m2 "${cake_rate}kbit"
-    # Attach CAKE qdisc (using besteffort, allow overrides via EXTRA_PARAMETERS)
+    # Attach CAKE qdisc - use "hybrid" mode to match HFSC overhead
+    local cake_link_params=$(get_cake_link_params "hybrid")
     local CAKE_OPTS=""
+    
     if [ "$DIR" = "wan" ]; then
         CAKE_OPTS="besteffort" # Default for non-realtime in hybrid
         [ "$HOST_ISOLATION" -eq 1 ] && CAKE_OPTS="$CAKE_OPTS dual-srchost"
         [ "$NAT_EGRESS" -eq 1 ] && CAKE_OPTS="$CAKE_OPTS nat" || CAKE_OPTS="$CAKE_OPTS nonat"
         [ "$WASHDSCPUP" -eq 1 ] && CAKE_OPTS="$CAKE_OPTS wash" || CAKE_OPTS="$CAKE_OPTS nowash"
         [ -n "$RTT" ] && CAKE_OPTS="$CAKE_OPTS rtt ${RTT}ms"
-        [ -n "$COMMON_LINK_PRESETS" ] && CAKE_OPTS="$CAKE_OPTS $COMMON_LINK_PRESETS"
-        [ -n "$LINK_COMPENSATION" ] && CAKE_OPTS="$CAKE_OPTS $LINK_COMPENSATION" || CAKE_OPTS="$CAKE_OPTS noatm"
-        [ -n "$OVERHEAD" ] && CAKE_OPTS="$CAKE_OPTS overhead $OVERHEAD"
-        [ -n "$MPU" ] && CAKE_OPTS="$CAKE_OPTS mpu $MPU"
+        [ -n "$cake_link_params" ] && CAKE_OPTS="$CAKE_OPTS $cake_link_params"
+        # Only add LINK_COMPENSATION if explicitly set (don't add noatm as ADSL presets already set atm)
+        [ -n "$LINK_COMPENSATION" ] && CAKE_OPTS="$CAKE_OPTS $LINK_COMPENSATION"
         [ -n "$EXTRA_PARAMETERS_EGRESS" ] && CAKE_OPTS="$CAKE_OPTS $EXTRA_PARAMETERS_EGRESS"
     else # lan (ingress)
         CAKE_OPTS="besteffort ingress" # Default for non-realtime in hybrid
@@ -1367,10 +1383,9 @@ setup_hybrid() {
         [ "$NAT_INGRESS" -eq 1 ] && CAKE_OPTS="$CAKE_OPTS nat" || CAKE_OPTS="$CAKE_OPTS nonat"
         [ "$WASHDSCPDOWN" -eq 1 ] && CAKE_OPTS="$CAKE_OPTS wash" || CAKE_OPTS="$CAKE_OPTS nowash"
         [ -n "$RTT" ] && CAKE_OPTS="$CAKE_OPTS rtt ${RTT}ms"
-        [ -n "$COMMON_LINK_PRESETS" ] && CAKE_OPTS="$CAKE_OPTS $COMMON_LINK_PRESETS"
-        [ -n "$LINK_COMPENSATION" ] && CAKE_OPTS="$CAKE_OPTS $LINK_COMPENSATION" || CAKE_OPTS="$CAKE_OPTS noatm"
-        [ -n "$OVERHEAD" ] && CAKE_OPTS="$CAKE_OPTS overhead $OVERHEAD"
-        [ -n "$MPU" ] && CAKE_OPTS="$CAKE_OPTS mpu $MPU"
+        [ -n "$cake_link_params" ] && CAKE_OPTS="$CAKE_OPTS $cake_link_params"
+        # Only add LINK_COMPENSATION if explicitly set (don't add noatm as ADSL presets already set atm)
+        [ -n "$LINK_COMPENSATION" ] && CAKE_OPTS="$CAKE_OPTS $LINK_COMPENSATION"
         [ -n "$EXTRA_PARAMETERS_INGRESS" ] && CAKE_OPTS="$CAKE_OPTS $EXTRA_PARAMETERS_INGRESS"
     fi
     tc qdisc del dev "$DEV" parent 1:13 handle 13: > /dev/null 2>&1
@@ -1410,6 +1425,214 @@ setup_hybrid() {
     fi
 }
 
+# Helper functions for HTB dynamic parameter calculation
+# Calculate optimal HTB quantum based on rate
+calculate_htb_quantum() {
+    local rate=$1
+    local duration_us=${2:-1000}  # Default 1ms = 1000µs
+    local MTU=1500
+    
+    # Duration-based calculation (SQM-style)
+    # rate in kbit/s, duration in µs, result in bytes
+    local quantum=$(((duration_us * rate) / 8000))
+    
+    # ATM-aware minimum
+    if [ "$LINKTYPE" = "atm" ]; then
+        local min_quantum=$(((MTU + 48 + 47) / 48 * 53))
+        [ $quantum -lt $min_quantum ] && quantum=$min_quantum
+    else
+        [ $quantum -lt $MTU ] && quantum=$MTU
+    fi
+    
+    # Maximum reasonable quantum (200KB)
+    [ $quantum -gt 200000 ] && quantum=200000
+    
+    echo $quantum
+}
+
+# Calculate HTB burst size based on rate and target latency
+calculate_htb_burst() {
+    local rate=$1
+    local duration_us=${2:-10000}  # Default 10ms = 10000µs
+    
+    # burst in bytes for given duration
+    local burst=$(((duration_us * rate) / 8000))
+    
+    # Minimum burst should be at least 1 MTU
+    [ $burst -lt 1500 ] && burst=1500
+    
+    echo $burst
+}
+
+# Function to setup HTB qdisc (simple.qos style with 3 classes)
+setup_htb() {
+    local DEV=$1 RATE=$2 DIR=$3
+    local MTU=1500
+    
+    # Ensure rate is valid
+    [ "$RATE" -le 0 ] && RATE=1
+    
+    # Delete existing qdisc
+    tc qdisc del dev "$DEV" root > /dev/null 2>&1
+    
+    # Get overhead parameters from CAKE configuration
+    local TC_OH_PARAMS
+    TC_OH_PARAMS=$(get_tc_overhead_params)
+    
+    # Setup HTB root with default to best effort (class 13)
+    tc qdisc add dev "$DEV" root handle 1: $TC_OH_PARAMS htb default 13
+    
+    # Calculate HTB quantum for root (all use same quantum)
+    local HTB_QUANTUM=$(calculate_htb_quantum $RATE)
+    
+    # Root class gets modest burst since we typically configure 80-90% of physical rate
+    # This allows brief bursts into the headroom without causing bufferbloat
+    local ROOT_BURST=$(calculate_htb_burst $RATE 1000)   # 1ms burst
+    local ROOT_CBURST=$(calculate_htb_burst $RATE 1000)  # 1ms cburst
+    
+    # Create main rate limiting class
+    tc class add dev "$DEV" parent 1: classid 1:1 htb \
+        quantum $HTB_QUANTUM \
+        rate "${RATE}kbit" ceil "${RATE}kbit" \
+        burst $ROOT_BURST cburst $ROOT_CBURST
+    
+    # Smart calculation that scales smoothly across all bandwidths
+    # Formula: percent = 15 + (50000 / RATE), capped between 5-40%
+    #
+    # This creates a hyperbolic curve that provides:
+    # - High percentage (up to 40%) for very low bandwidth connections
+    # - Smooth decrease as bandwidth increases
+    # - Stabilizes around 15% for high bandwidth connections
+    #
+    # Examples:
+    # - 1 Mbit:   15 + 50 = 65% → capped at 40% → 400 kbit → min 800 kbit
+    # - 5 Mbit:   15 + 10 = 25% → 1250 kbit
+    # - 10 Mbit:  15 + 5  = 20% → 2000 kbit
+    # - 50 Mbit:  15 + 1  = 16% → 8000 kbit
+    # - 100 Mbit: 15 + 0.5 = 15.5% → 15500 kbit
+    #
+    # Visualization:
+    #   40% |*
+    #       |  *
+    #   30% |    *
+    #       |      *
+    #   20% |        * * * * *
+    #   15% |                  * * * * * * * *
+    #       +---------------------------------> Bandwidth
+    #       1    5   10   20   50  100  200 Mbit
+    #
+    # Two safety mechanisms ensure adequate priority bandwidth:
+    # 1. Percentage-based: Scales with total bandwidth
+    # 2. Absolute minimum: 800 kbit for gaming/VoIP needs
+    
+    # Calculate sliding percentage (higher % for lower rates)
+    local percent=$((15 + 50000 / RATE))
+    [ $percent -gt 40 ] && percent=40  # Cap at 40%
+    [ $percent -lt 5 ] && percent=5     # Floor at 5%
+    
+    local percent_based=$((RATE * percent / 100))
+    local absolute_min=800              # Gaming/VoIP minimum
+    
+    # Take the maximum of percentage-based and absolute minimum
+    local PRIO_RATE_MIN=$percent_based
+    [ $absolute_min -gt $PRIO_RATE_MIN ] && PRIO_RATE_MIN=$absolute_min
+    
+    # Calculate ceiling - ensure it's at least min + some headroom
+    local PRIO_CEIL=$((RATE / 3))  # Start with 33%
+    
+    # Ensure ceiling is at least min rate + 10%
+    local min_ceiling=$((PRIO_RATE_MIN * 110 / 100))
+    [ $PRIO_CEIL -lt $min_ceiling ] && PRIO_CEIL=$min_ceiling
+    
+    # Calculate BE and BK rates
+    local BE_MIN_RATE=$((RATE / 6))    # 16% guaranteed
+    local BK_MIN_RATE=$((RATE / 6))    # 16% guaranteed
+    
+    # Adjust if total mins exceed available bandwidth
+    local total_min=$((PRIO_RATE_MIN + BE_MIN_RATE + BK_MIN_RATE))
+    if [ $total_min -gt $((RATE * 90 / 100)) ]; then
+        # Scale down proportionally
+        BE_MIN_RATE=$((BE_MIN_RATE * RATE * 90 / 100 / total_min))
+        BK_MIN_RATE=$((BK_MIN_RATE * RATE * 90 / 100 / total_min))
+    fi
+    
+    # BE/BK ceiling - almost full rate minus a small reserve
+    local BE_CEIL=$((RATE - 16))
+    
+    # Calculate individual burst values for each class
+    # Priority class burst - based on its own rate
+    local PRIO_BURST=$(calculate_htb_burst $PRIO_RATE_MIN 10000)  # 10ms burst for rate
+    local PRIO_CBURST=$(calculate_htb_burst $PRIO_RATE_MIN 5000)  # 5ms burst for ceiling
+    [ $PRIO_CBURST -lt 1500 ] && PRIO_CBURST=1500
+    
+    # Priority class (1:11) - for realtime/gaming traffic
+    tc class add dev "$DEV" parent 1:1 classid 1:11 htb \
+        quantum $HTB_QUANTUM \
+        rate "${PRIO_RATE_MIN}kbit" ceil "${PRIO_CEIL}kbit" \
+        burst $PRIO_BURST cburst $PRIO_CBURST prio 1
+    
+    # Calculate BE burst values - based on its own guaranteed rate
+    local BE_BURST=$(calculate_htb_burst $BE_MIN_RATE 10000)  # 10ms burst for rate
+    local BE_CBURST=$(calculate_htb_burst $BE_MIN_RATE 5000)  # 5ms burst for ceiling
+    [ $BE_CBURST -lt 1500 ] && BE_CBURST=1500
+    
+    # Best Effort class (1:13) - default traffic
+    tc class add dev "$DEV" parent 1:1 classid 1:13 htb \
+        quantum $HTB_QUANTUM \
+        rate "${BE_MIN_RATE}kbit" ceil "${BE_CEIL}kbit" \
+        burst $BE_BURST cburst $BE_CBURST prio 2
+    
+    # Calculate BK burst values - based on its own guaranteed rate
+    local BK_BURST=$(calculate_htb_burst $BK_MIN_RATE 10000)  # 10ms burst for rate
+    local BK_CBURST=$(calculate_htb_burst $BK_MIN_RATE 5000)  # 5ms burst for ceiling
+    [ $BK_CBURST -lt 1500 ] && BK_CBURST=1500
+    
+    # Background/Bulk class (1:15) - low priority
+    tc class add dev "$DEV" parent 1:1 classid 1:15 htb \
+        quantum $HTB_QUANTUM \
+        rate "${BK_MIN_RATE}kbit" ceil "${BE_CEIL}kbit" \
+        burst $BK_BURST cburst $BK_CBURST prio 3
+    
+    # Attach leaf qdiscs
+    # Calculate fq_codel parameters
+    local INTVL=$((100+2*1500*8/RATE))
+    local TARG=$((540*8/RATE+4))
+    
+    # Priority class gets fq_codel with aggressive settings
+    tc qdisc add dev "$DEV" parent 1:11 handle 110: fq_codel \
+        interval "${INTVL}ms" target "${TARG}ms" \
+        quantum 300
+    
+    # Best effort with standard settings
+    tc qdisc add dev "$DEV" parent 1:13 handle 130: fq_codel \
+        interval "${INTVL}ms" target "${TARG}ms" \
+        quantum 1500
+    
+    # Background with larger target
+    tc qdisc add dev "$DEV" parent 1:15 handle 150: fq_codel \
+        interval "$((INTVL*2))ms" target "$((TARG*2))ms" \
+        quantum 300
+    
+    # Apply DSCP filters only on ingress (LAN/IFB)
+    if [ "$DIR" = "lan" ]; then
+        # Delete existing filters
+        tc filter del dev "$DEV" parent 1: prio 1 > /dev/null 2>&1
+        tc filter del dev "$DEV" parent 1: prio 2 > /dev/null 2>&1
+        
+        # IPv4 filters (prio 1)
+        # Priority class: EF, CS5, CS6, CS7 -> 1:11
+        # Background class: CS1 -> 1:15
+        for class_enum in ef cs5 cs6 cs7 cs1; do
+            add_tc_filter "$DEV" "$class_enum" "ipv4"
+        done
+        
+        # IPv6 filters (prio 2)
+        for class_enum in ef cs5 cs6 cs7 cs1 cs0; do
+            add_tc_filter "$DEV" "$class_enum" "ipv6"
+        done
+    fi
+}
+
 
 ##############################
 #       Main Logic
@@ -1443,6 +1666,11 @@ case "$ROOT_QDISC" in
     cake)
         echo "Applying CAKE queueing discipline."
         setup_cake
+        ;;
+    htb)
+        echo "Applying HTB queueing discipline."
+        setup_htb "$WAN" "$UPRATE" "wan"
+        setup_htb "$LAN" "$DOWNRATE" "lan"
         ;;
     *) # Fallback for unsupported ROOT_QDISC
         echo "Error: Unsupported ROOT_QDISC: '$ROOT_QDISC'. Check /etc/config/qosmate." >&2

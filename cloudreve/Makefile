@@ -5,12 +5,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cloudreve
-PKG_VERSION:=4.2.0
-PKG_RELEASE:=31
+PKG_VERSION:=4.4.1
+PKG_RELEASE:=40
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/cloudreve/Cloudreve.git
-PKG_SOURCE_VERSION:=b13490357bc3ea3a570c9a68a8fb74d3865e7a2d
+PKG_SOURCE_VERSION:=4c976b862734d16a69d0d3095dbd5e882cb4f76d
 PKG_MIRROR_HASH:=skip
 
 PKG_LICENSE:=GPL-3.0-only
@@ -23,8 +23,8 @@ PKG_BUILD_FLAGS:=no-mips16
 
 GO_PKG:=github.com/cloudreve/Cloudreve/v4
 GO_PKG_LDFLAGS_X:= \
-	$(GO_PKG)/pkg/conf.BackendVersion=$(PKG_VERSION) \
-	$(GO_PKG)/pkg/conf.LastCommit=$(PKG_VERSION)
+	$(GO_PKG)/application/constants.BackendVersion=$(PKG_VERSION) \
+	$(GO_PKG)/application/constants.LastCommit=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
@@ -47,10 +47,10 @@ define Build/Compile
 	( \
 		pushd $(PKG_BUILD_DIR)/assets ; \
 		yarn install ; \
+		yarn version --new-version $(PKG_VERSION) --no-git-tag-version ; \
 		yarn run build ; \
 		cd .. ; \
-		zip -r - assets/build > assets.zip ; \
-		mv assets.zip application/statics ; \
+		zip -r - assets/build > application/statics/assets.zip ; \
 		popd ; \
 		$(call GoPackage/Build/Compile) ; \
 	)

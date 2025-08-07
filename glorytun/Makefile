@@ -9,9 +9,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=glorytun
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=23100474922259d00a8c0c4b00a0c8de89202cf9
+PKG_SOURCE_VERSION:=null
 PKG_SOURCE:=glorytun-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/Ysurac/glorytun.git
 PKG_VERSION:=0.0.35
